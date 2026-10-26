@@ -32,23 +32,21 @@
       <li><b>iPhone:</b> botón compartir → <b>Agregar a inicio</b>.</li>
       <li><b>Android:</b> menú ⋮ → <b>Agregar a la pantalla principal</b>.</li>
     </ol>
-    <p>Desde el ícono se abre directo tu libreta.</p>
+    <p>Desde el ícono se abre directo tu libreta. No toques el botón de abajo antes de agregarla.</p>
   </div>
   <p id="abriendo">Abriendo tu libreta…</p>
   <a class="btn" href="https://claude.ai/artifact/Lx2FV3RABYQGLwuhcnxDtB">Abrir la Libreta</a>
 </main>
 <script>
-  // La primera vez muestra cómo agregarla a inicio; las siguientes va directo a la libreta.
-  // Para volver a ver las instrucciones, abrí esta página con ?ver al final.
+  // Si se abrió desde el ícono de inicio (la dirección termina en ?app), va directo a la libreta.
+  // Si no, muestra cómo agregarla y deja la dirección con ?app, así el ícono que guardes ya la incluye.
   var destino = 'https://claude.ai/artifact/Lx2FV3RABYQGLwuhcnxDtB';
-  var yaVista = false;
-  try { yaVista = localStorage.getItem('libreta-vista') === '1'; } catch (e) {}
-  if (yaVista && location.search.indexOf('ver') === -1) {
+  if (/[?&]app\b/.test(location.search)) {
     location.replace(destino);
   } else {
     document.getElementById('primera').hidden = false;
     document.getElementById('abriendo').hidden = true;
-    try { localStorage.setItem('libreta-vista', '1'); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + '?app'); } catch (e) {}
   }
 </script>
 </body>
