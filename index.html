@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Libreta</title>
+<meta name="apple-mobile-web-app-title" content="Libreta">
+<meta name="theme-color" content="#2140D4">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  html,body{height:100%}
+  body{margin:0;display:grid;place-items:center;padding:24px;box-sizing:border-box;color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:#2140D4;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:28px 28px}
+  main{max-width:360px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+  img{width:96px;height:96px;border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  h1{margin:6px 0 0;font-size:26px;letter-spacing:-.02em}
+  p{margin:0;opacity:.85}
+  ol{text-align:left;margin:4px 0 0;padding-left:20px;opacity:.92}
+  a.btn{display:inline-block;margin-top:6px;background:#fff;color:#1630B0;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:14px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <img src="icon-192.png" alt="">
+  <h1>Libreta</h1>
+  <div id="primera" hidden>
+    <p>Agregala a la pantalla de inicio para tenerla con este ícono:</p>
+    <ol>
+      <li><b>iPhone:</b> botón compartir → <b>Agregar a inicio</b>.</li>
+      <li><b>Android:</b> menú ⋮ → <b>Agregar a la pantalla principal</b>.</li>
+    </ol>
+    <p>Desde el ícono se abre directo tu libreta.</p>
+  </div>
+  <p id="abriendo">Abriendo tu libreta…</p>
+  <a class="btn" href="https://claude.ai/artifact/Lx2FV3RABYQGLwuhcnxDtB">Abrir la Libreta</a>
+</main>
+<script>
+  // La primera vez muestra cómo agregarla a inicio; las siguientes va directo a la libreta.
+  // Para volver a ver las instrucciones, abrí esta página con ?ver al final.
+  var destino = 'https://claude.ai/artifact/Lx2FV3RABYQGLwuhcnxDtB';
+  var yaVista = false;
+  try { yaVista = localStorage.getItem('libreta-vista') === '1'; } catch (e) {}
+  if (yaVista && location.search.indexOf('ver') === -1) {
+    location.replace(destino);
+  } else {
+    document.getElementById('primera').hidden = false;
+    document.getElementById('abriendo').hidden = true;
+    try { localStorage.setItem('libreta-vista', '1'); } catch (e) {}
+  }
+</script>
+</body>
+</html>
