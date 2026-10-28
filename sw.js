@@ -1,5 +1,5 @@
 // Libreta: guarda la app en el equipo para que abra sin internet.
-const VERSION='libreta-2026-10-28a';
+const VERSION='libreta-2026-10-28b';
 const BASE=['./','./index.html','./config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./favicon-32.png'];
 const EXTERNOS=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(VERSION);await c.addAll(BASE);

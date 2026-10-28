@@ -2072,7 +2072,20 @@ document.addEventListener('click',e=>{
   else act(t.dataset.act,t);
 });
 document.addEventListener('keydown',e=>{vTouch();if(e.key==='Escape'&&!$('#scrim').hidden)closeSheet()});
+/* Montos: punto de miles mientras escribís (coma para decimales) */
+function fmtMontoInput(el,e){let v=el.value;if(!v)return;let pos=el.selectionStart==null?v.length:el.selectionStart;const dec=el.inputMode==='decimal';
+  if(dec&&e&&e.inputType==='insertText'&&e.data==='.'&&!v.replace(/\.(?=[^.]*$)/,'').includes(',')&&v.charAt(pos-1)==='.'){
+    const prev=v.slice(0,pos-1).replace(/[^\d]/g,'');if(prev.length){v=v.slice(0,pos-1)+','+v.slice(pos);el.dataset.dotc='1'}}
+  if(dec&&e&&e.inputType==='insertFromPaste'&&!v.includes(',')&&/^\s*-?\d+\.\d{1,2}\s*$/.test(v))v=v.replace('.',',');
+  const neg=/^\s*[-−]/.test(v),antes=v.slice(0,pos).replace(/[^\d,]/g,'').length;
+  let t=v.replace(/[^\d,]/g,'');if(!t.includes(','))delete el.dataset.dotc;else if(el.dataset.dotc&&t.length-t.indexOf(',')-1>2){t=t.replace(',','');delete el.dataset.dotc}const i=t.indexOf(',');let ent=i>=0?t.slice(0,i):t,dc=i>=0&&dec?t.slice(i+1).replace(/,/g,'').slice(0,2):null;
+  ent=ent.replace(/^0+(?=\d)/,'');if(dc!==null&&!ent)ent='0';
+  const out=(neg?'-':'')+ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+(dc!==null?','+dc:'');
+  if(out===el.value)return;el.value=out;
+  let n=antes,k=neg?1:0;while(k<out.length&&n>0){if(/[\d,]/.test(out[k]))n--;k++}
+  try{el.setSelectionRange(k,k)}catch(err){}}
 document.addEventListener('input',e=>{const id=e.target.id;
+  if(e.target.matches&&e.target.matches('input[inputmode=decimal],input[inputmode=numeric]'))fmtMontoInput(e.target,e);
   if(id==='fq'){S.fq=e.target.value;render()}else if(id==='nq'){S.nq=e.target.value;render()}else if(id==='vq'){S.vq=e.target.value;render()}
   else if(id==='f-neto')calcIVA();else if(id==='f-monto'&&S.sheet&&S.sheet.kind==='mov'){movSync();convCalc()}else if(id==='f-tc')convCalc()});
 document.addEventListener('change',e=>{const t=e.target,id=t.id;
