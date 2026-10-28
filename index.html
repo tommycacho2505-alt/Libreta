@@ -264,6 +264,21 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .acc input{margin-top:4px;width:16px;height:16px;accent-color:var(--ink);flex:none}
 .acc .txt{flex:1;min-width:0}
 .answer{white-space:pre-line;line-height:1.55}
+.acc.off .txt{opacity:.5}
+.aopt{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.aol{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px;width:100%}
+.aol.need{color:var(--warn)}
+.aopt .chip{gap:5px;padding:5px 11px;font-size:13px;cursor:pointer}
+.aopt .chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.aopt .inp.sm{width:auto;padding:5px 10px;font-size:13px;height:auto;border-radius:99px}
+.micb{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;border-radius:16px;background:var(--accent);color:#fff;font-weight:600;font-size:15.5px;margin-bottom:12px;transition:transform .15s}
+.micb:active{transform:scale(.98)}
+.micb.on{background:var(--neg)}
+@media (prefers-reduced-motion:no-preference){.micb.on svg{animation:blink 1s ease-in-out infinite}}
+.cmd .cmdmic{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:var(--accent);flex:none}
+.vozb{color:var(--accent)}
+.warnt{color:var(--warn)}
+.btn[disabled]{opacity:.5;pointer-events:none}
 
 /* Avisos */
 .alerts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden}
@@ -612,6 +627,7 @@ img{max-width:100%}
       <header class="top">
         <h1 id="vt">Inicio</h1>
         <span class="sync idle" id="sync"><i></i><span>Conectando…</span></span>
+        <button class="iconbtn vozb" data-act="voz" id="b-voz" aria-label="Cargar hablando"></button>
         <button class="iconbtn" data-act="ojo" id="b-ojo" aria-label="Ocultar montos"></button>
         <button class="iconbtn" data-act="tema" id="b-tema" aria-label="Cambiar tema"></button>
       </header>
@@ -669,6 +685,7 @@ function parseMonto(s){s=String(s??'').trim().replace(/[^\d.,]/g,'');if(!s)retur
   return parseFloat(s)}
 const strip=o=>{const c={...o};delete c.id;return c};
 const I={
+ mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/>',
  home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
  wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/>',
  check:'<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
@@ -1129,7 +1146,7 @@ function docsBlock(col,id){const ds=docsDe(col,id);
 /* ---------- vistas ---------- */
 const V={};
 function loadingView(){return`<div class="hello"><span class="eyebrow">Abriendo tu libreta…</span></div><div class="sk" style="height:250px"></div><div class="tiles">${'<div class="sk" style="height:118px"></div>'.repeat(4)}</div><div class="sk"></div>`}
-const cmdBar=()=>smp?`<form class="cmd" data-form="cmd">${ic('spark',18)}<input id="cmd" placeholder="Escribí o dictá: “nafta 60 mil con MP”, “dentista jueves 17:30”, “¿cuánto gasté en comida?”" autocomplete="off" aria-label="Cargar o preguntar"><button class="btn sm pri" type="submit" aria-label="Enviar">${ic('send',16)}</button></form>`:'';
+const cmdBar=()=>`<form class="cmd" data-form="cmd">${ic('spark',18)}<input id="cmd" placeholder="Escribí o tocá el micrófono: “gasté 2 palos en una tele con la visa”" autocomplete="off" aria-label="Cargar o preguntar"><button type="button" class="cmdmic" data-act="voz" aria-label="Hablar">${ic('mic',18)}</button><button class="btn sm pri" type="submit" aria-label="Enviar">${ic('send',16)}</button></form>`;
 V.inicio=()=>{
   const h=HOY(),m=h.slice(0,7),t=tot(movsMes(m)),tu=tot(movsMes(m),'USD'),hasUSD=S.movs.some(x=>x.moneda==='USD');
   const hr=new Date().getHours(),sal=hr<13?'Buen día':hr<20?'Buenas tardes':'Buenas noches';
@@ -1561,31 +1578,44 @@ function resumenDatos(){
   if(S.cfg.fiscal.regimen==='mono'){const me=monoEstado();out.monotributo={categoria:me.ci.c,tope:Math.round(me.ci.tope),facturado12meses:Math.round(me.fact12),quedaPorFacturar:Math.round(me.queda),cuota:Math.round(me.cuota)}}
   return out;
 }
+/* ---------- Voz e IA ---------- */
 function promptAI(texto){
   const d=new Date();const dia=new Intl.DateTimeFormat('es-AR',{weekday:'long'}).format(d);
-  const ctx={hoy:HOY(),diaSemana:dia,categoriasGasto:S.cfg.catGasto,categoriasIngreso:S.cfg.catIngreso,cuentas:S.cfg.cuentas,tarjetas:Object.keys(S.cfg.tarjetas),listasTareas:S.cfg.listas,autos:S.vehiculos.map(v=>v.nombre)};
-  return`Sos el asistente de la libreta personal de un usuario de Argentina (montos en pesos salvo que diga dólares/USD/verdes). Tu trabajo: convertir su mensaje en acciones para cargar, o responder su pregunta usando SOLO los datos de abajo.
+  const ctx={hoy:HOY(),diaSemana:dia,categoriasGastoPersonal:S.cfg.catGasto,categoriasIngresoPersonal:S.cfg.catIngreso,categoriasGastoObra:CAT_OBRA.gasto,categoriasIngresoObra:CAT_OBRA.ingreso,
+    cuentas:S.cfg.cuentas,tarjetas:Object.keys(S.cfg.tarjetas),listasTareas:S.cfg.listas,autos:S.vehiculos.map(v=>({nombre:v.nombre,patente:v.patente||''})),habitos:S.habitos.map(h=>h.nombre),pagosFijos:S.fijos.map(f=>f.nombre)};
+  return`Sos el asistente de la libreta personal de Cach, arquitecto de Argentina que también lleva plata de obra (montos en pesos salvo que diga dólares/USD/verdes). Tu trabajo: convertir su mensaje (muchas veces dictado por voz, con errores) en acciones para cargar, o responder su pregunta usando SOLO los datos de abajo.
 
-Respondé SOLO con un objeto JSON con esta forma: {"acciones":[...],"respuesta":""}
+Respondé SOLO con un objeto JSON: {"acciones":[...],"respuesta":""}
 
 Tipos de acción (usá exactamente estos campos):
-- {"tipo":"gasto"|"ingreso","monto":número,"moneda":"ARS"|"USD","categoria":"<de la lista>","cuenta":"<de la lista>","fecha":"AAAA-MM-DD","desc":"texto corto","cuotas":número (solo gastos en cuotas, si no 1)}
-  En cuotas, "monto" es el valor de CADA cuota. Si dice el total ("heladera 600 mil en 6 cuotas"), dividí.
-- {"tipo":"transferencia","monto":número,"moneda":"ARS"|"USD","cuenta":"<origen>","destino":"<destino>","montoDest":número,"monedaDest":"ARS"|"USD","fecha":"AAAA-MM-DD","desc":"texto"}  (ej: compra de dólares: sale ARS de Banco, entra USD en Efectivo)
+- {"tipo":"gasto"|"ingreso","monto":número,"moneda":"ARS"|"USD","es":"personal"|"obra","categoria":"<de la lista que corresponde>","otrasCategorias":["hasta 2 alternativas de la misma lista"],"cuenta":"<de la lista, o vacío si no lo dice>","fecha":"AAAA-MM-DD","desc":"texto corto, ej: Televisión","cuotas":número}
+  "es":"obra" si habla de obra, cliente, materiales, mano de obra, anticipo o certificado de obra; si no, "personal". Usá las categorías de obra o personales según corresponda.
+  En cuotas, "monto" es el valor de CADA cuota: si dice el total ("tele 2 millones en 6 cuotas"), dividí.
+- {"tipo":"transferencia","monto":número,"moneda":"ARS"|"USD","cuenta":"<origen>","destino":"<destino>","montoDest":número,"monedaDest":"ARS"|"USD","fecha":"AAAA-MM-DD","desc":"texto"}  (mover plata entre cuentas; compra de dólares: sale ARS de Banco, entra USD en Efectivo)
+- {"tipo":"pase","monto":número,"moneda":"ARS"|"USD","de":"personal"|"obra","para":"personal"|"obra","cuenta":"<dónde está la plata, de la lista o vacío>","ganancia":true|false,"fecha":"AAAA-MM-DD","desc":"texto"}
+  Cambia de quién es la plata sin moverla de cuenta. "separé 3 millones para obra" = de personal para obra. "retiré 500 mil de ganancia de la obra" = de obra para personal con ganancia true.
 - {"tipo":"tarea","titulo":"texto","fecha":"AAAA-MM-DD o vacío","hora":"HH:MM o vacío","lista":"<de la lista o vacío>","prio":"baja"|"normal"|"alta","repetir":""|"diaria"|"semanal"|"mensual"|"anual"}
 - {"tipo":"turno","titulo":"texto","fecha":"AAAA-MM-DD","hora":"HH:MM o vacío","lugar":"texto o vacío"}
 - {"tipo":"nota","titulo":"texto","texto":"texto"}
-- {"tipo":"papel","nombre":"texto","vence":"AAAA-MM-DD"}
+- {"tipo":"papel","nombre":"texto","vence":"AAAA-MM-DD"}  (vencimiento de un documento: licencia, seguro, VTV, pasaporte)
 - {"tipo":"factura","cliente":"texto","total":número,"fecha":"AAAA-MM-DD"}
-- {"tipo":"km","auto":"<de la lista>","km":número}
+- {"tipo":"auto","nombre":"marca y modelo","patente":"en mayúsculas o vacío","km":número o 0}  (agregar un auto nuevo)
+- {"tipo":"km","auto":"<de la lista>","km":número}  (actualizar kilómetros)
+- {"tipo":"service","auto":"<de la lista>","que":"Cambio de aceite, frenos…","costo":número o 0,"cuenta":"<de la lista o vacío>","km":número o 0,"taller":"texto o vacío","fecha":"AAAA-MM-DD","proxKm":número o 0,"proxFecha":"AAAA-MM-DD o vacío"}
+- {"tipo":"habito","nombre":"texto","frec":"diario"|"dias"|"cada","dias":[0=domingo,1=lunes…6=sábado],"cada":número,"hora":"HH:MM o vacío"}  (crear un hábito)
+- {"tipo":"habito_hecho","habito":"<de la lista>","fecha":"AAAA-MM-DD","hecho":true|false}  ("hoy fui al gimnasio", "ayer no caminé")
+- {"tipo":"fijo","nombre":"texto","monto":número,"moneda":"ARS"|"USD","dia":número,"frecuencia":"mensual"|"anual","debito":true|false,"categoria":"<gasto personal>","cuenta":"<de la lista o vacío>"}  (pago fijo o suscripción nueva; suscripción = categoría "Suscripciones")
+- {"tipo":"pagar_fijo","fijo":"<de la lista>"}  ("pagué la luz", "se debitó el monotributo")
 
 Reglas:
-- "60 mil" = 60000; "60 lucas" = 60000; "1,5 palos" o "1.5M" = 1500000; "un palo" = 1000000.
-- Fechas relativas a hoy (${ctx.hoy}, ${dia}). "el jueves" = el próximo jueves. Gastos e ingresos sin fecha = hoy.
-- Categoría y cuenta: elegí la más parecida de las listas. "MP" = Mercado Pago. "visa", "master", "tarjeta" = la tarjeta de la lista que corresponda. Si no dice cuenta, usá "${S.cfg.cuentas[0]||'Efectivo'}".
+- "60 mil" = 60000; "60 lucas" = 60000; "1,5 palos", "1.5M" o "un millón y medio" = 1500000; "un palo" = 1000000; "2 millones" = 2000000.
+- Fechas relativas a hoy (${ctx.hoy}, ${dia}). "el jueves" = el próximo jueves. Sin fecha = hoy.
+- Cuenta: elegí de la lista. "MP" = Mercado Pago; "visa", "master", "tarjeta", "crédito" = la tarjeta de la lista; "débito", "transferencia" = el banco; "efectivo", "en mano", "cash" = efectivo. Si NO dice con qué pagó o dónde entró, dejá "cuenta" vacío: se lo voy a preguntar con botones. No inventes.
+- Si dice "pagué la luz/el gas/…" y ese pago está en pagosFijos, usá pagar_fijo.
+- Si un hábito, auto o pago fijo que nombra no está en las listas, usá la acción de crearlo.
 - Un mensaje puede tener varias acciones.
-- Si es una pregunta: "acciones" vacío y "respuesta" con la respuesta breve (máximo 4 oraciones, montos con punto de miles, ej $ 85.000), calculada SOLO con los datos. Si los datos no alcanzan, decilo.
-- Si no entendés el mensaje, "acciones" vacío y en "respuesta" pedí que lo aclare.
+- Si es una pregunta: "acciones" vacío y "respuesta" breve (máximo 4 oraciones, montos con punto de miles, ej $ 85.000), calculada SOLO con los datos.
+- Si no entendés, "acciones" vacío y en "respuesta" pedí que lo aclare.
 
 Listas: ${JSON.stringify(ctx)}
 
@@ -1593,79 +1623,190 @@ Datos de la libreta: ${JSON.stringify(resumenDatos())}
 
 Mensaje del usuario: """${texto.slice(0,2000)}"""`;
 }
-const AI_TIPOS=['gasto','ingreso','transferencia','tarea','turno','nota','papel','factura','km'];
+const AI_TIPOS=['gasto','ingreso','transferencia','pase','tarea','turno','nota','papel','factura','km','auto','service','habito','habito_hecho','fijo','pagar_fijo'];
+const sinAc=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const buscaNom=(lista,nom,k)=>{const n=sinAc(nom);if(!n)return null;return lista.find(x=>sinAc(k(x))===n)||lista.find(x=>sinAc(k(x)).includes(n)||n.includes(sinAc(k(x))))||null};
+const cuentaOk=c=>S.cfg.cuentas.includes(c)?c:'';
 function normAcc(a){if(!a||typeof a!=='object'||!AI_TIPOS.includes(a.tipo))return null;const h=HOY();const o={...a};
-  if(['gasto','ingreso','transferencia','factura'].includes(o.tipo)){o.monto=+o.monto||+o.total||0;if(!(o.monto>0))return null;o.moneda=o.moneda==='USD'?'USD':'ARS';o.fecha=okDate(o.fecha)?o.fecha:h}
-  if(o.tipo==='gasto'||o.tipo==='ingreso'){const cats=o.tipo==='ingreso'?S.cfg.catIngreso:S.cfg.catGasto;if(!cats.includes(o.categoria))o.categoria=cats.includes('Otros')?'Otros':cats[cats.length-1];if(!S.cfg.cuentas.includes(o.cuenta))o.cuenta=S.cfg.cuentas[0];o.cuotas=Math.max(1,Math.min(48,parseInt(o.cuotas)||1));if(o.tipo==='ingreso')o.cuotas=1}
-  if(o.tipo==='transferencia'){if(!S.cfg.cuentas.includes(o.cuenta))o.cuenta=S.cfg.cuentas[0];if(!S.cfg.cuentas.includes(o.destino))return null;o.montoDest=+o.montoDest||0;o.monedaDest=o.monedaDest==='USD'?'USD':o.monedaDest==='ARS'?'ARS':o.moneda}
+  if(['gasto','ingreso','transferencia','factura','pase'].includes(o.tipo)){o.monto=+o.monto||+o.total||0;if(!(o.monto>0))return null;o.moneda=o.moneda==='USD'?'USD':'ARS';o.fecha=okDate(o.fecha)?o.fecha:h}
+  if(o.tipo==='gasto'||o.tipo==='ingreso'){o.es=o.es==='obra'?'obra':'personal';const cats=catsDe(o.tipo,o.es==='obra'?FOBRA:FMIO);
+    if(!cats.includes(o.categoria))o.categoria=cats.includes('Otros')?'Otros':cats[cats.length-1];
+    o.otras=(Array.isArray(o.otrasCategorias)?o.otrasCategorias:[]).filter(c=>cats.includes(c)&&c!==o.categoria).slice(0,2);
+    o.cuenta=cuentaOk(o.cuenta);o.cuotas=Math.max(1,Math.min(48,parseInt(o.cuotas)||1));if(o.tipo==='ingreso')o.cuotas=1}
+  if(o.tipo==='transferencia'){if(!S.cfg.cuentas.includes(o.cuenta))o.cuenta=S.cfg.cuentas[0];if(!S.cfg.cuentas.includes(o.destino)||o.destino===o.cuenta)return null;o.montoDest=+o.montoDest||0;o.monedaDest=o.monedaDest==='USD'?'USD':o.monedaDest==='ARS'?'ARS':o.moneda}
+  if(o.tipo==='pase'){o.de=o.de==='obra'?'obra':'personal';o.para=o.para==='obra'?'obra':'personal';if(o.de===o.para)o.para=o.de==='obra'?'personal':'obra';o.cuenta=cuentaOk(o.cuenta);o.ganancia=o.de==='obra'&&o.para==='personal'&&o.ganancia!==false}
   if(o.tipo==='tarea'){if(!o.titulo)return null;o.fecha=okDate(o.fecha)?o.fecha:'';if(!S.cfg.listas.includes(o.lista))o.lista='';if(!['baja','normal','alta'].includes(o.prio))o.prio='normal';if(!REPS[o.repetir||''])o.repetir=''}
   if(o.tipo==='turno'){if(!o.titulo||!okDate(o.fecha))return null}
   if(o.tipo==='nota'&&!(o.titulo||o.texto))return null;
   if(o.tipo==='papel'&&(!o.nombre||!okDate(o.vence)))return null;
   if(o.tipo==='factura')o.total=o.monto;
-  if(o.tipo==='km'){o.km=+o.km||0;const v=S.vehiculos.find(x=>x.nombre===o.auto)||S.vehiculos[0];if(!v||!o.km)return null;o.vid=v.id;o.auto=v.nombre}
+  if(o.tipo==='km'){o.km=Math.round(+o.km||0);const v=buscaNom(S.vehiculos,o.auto,x=>x.nombre)||S.vehiculos[0];if(!v||!o.km)return null;o.vid=v.id;o.auto=v.nombre}
+  if(o.tipo==='auto'){if(!o.nombre)return null;o.patente=String(o.patente||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();o.km=Math.round(+o.km||0)}
+  if(o.tipo==='service'){const v=buscaNom(S.vehiculos,o.auto,x=>x.nombre)||S.vehiculos.find(x=>x.patente&&sinAc(o.auto).includes(sinAc(x.patente)))||(S.vehiculos.length===1?S.vehiculos[0]:null);if(!v)return null;
+    o.vid=v.id;o.auto=v.nombre;o.que=o.que||'Service';o.costo=+o.costo||0;o.km=Math.round(+o.km||0);o.proxKm=Math.round(+o.proxKm||0);o.fecha=okDate(o.fecha)?o.fecha:h;o.proxFecha=okDate(o.proxFecha)?o.proxFecha:'';o.cuenta=cuentaOk(o.cuenta)}
+  if(o.tipo==='habito'){if(!o.nombre)return null;o.frec=['diario','dias','cada'].includes(o.frec)?o.frec:'diario';o.dias=(Array.isArray(o.dias)?o.dias:[]).map(Number).filter(x=>x>=0&&x<=6);if(o.frec==='dias'&&!o.dias.length)o.frec='diario';o.cada=Math.max(2,parseInt(o.cada)||2);o.hora=/^\d\d:\d\d$/.test(o.hora||'')?o.hora:''}
+  if(o.tipo==='habito_hecho'){const hb=buscaNom(S.habitos,o.habito,x=>x.nombre);if(!hb)return null;o.hid=hb.id;o.habito=hb.nombre;o.fecha=okDate(o.fecha)&&o.fecha<=h?o.fecha:h;o.hecho=o.hecho!==false}
+  if(o.tipo==='fijo'){if(!o.nombre)return null;o.monto=+o.monto||0;o.moneda=o.moneda==='USD'?'USD':'ARS';o.dia=Math.min(31,Math.max(1,parseInt(o.dia)||1));o.frecuencia=o.frecuencia==='anual'?'anual':'mensual';o.debito=!!o.debito;if(!S.cfg.catGasto.includes(o.categoria))o.categoria=S.cfg.catGasto.includes('Servicios')?'Servicios':'Otros';o.cuenta=cuentaOk(o.cuenta)||cuentaPago()}
+  if(o.tipo==='pagar_fijo'){const f=buscaNom(S.fijos,o.fijo,x=>x.nombre);if(!f)return null;o.fid=f.id;o.fijo=f.nombre;o.yaPago=!!(f.pagados||{})[HOY().slice(0,7)]}
   return o}
+const pideCuenta=a=>(a.tipo==='gasto'||a.tipo==='ingreso'||a.tipo==='pase'||(a.tipo==='service'&&a.costo>0));
+const falta=a=>a._on&&pideCuenta(a)&&!a.cuenta;
 function descAcc(a){const fr=f=>f?fechaRel(f):'sin fecha';
   switch(a.tipo){
-   case'gasto':return[`Gasto ${money(a.monto,a.moneda)}${a.cuotas>1?` × ${a.cuotas} cuotas`:''}`,`${a.desc||a.categoria} · ${a.categoria} · ${a.cuenta} · ${fr(a.fecha)}`];
-   case'ingreso':return[`Ingreso ${money(a.monto,a.moneda)}`,`${a.desc||a.categoria} · ${a.categoria} · ${a.cuenta} · ${fr(a.fecha)}`];
+   case'gasto':return[`${a.es==='obra'?'Gasto de obra':'Gasto'} ${money(a.monto,a.moneda)}${a.cuotas>1?` × ${a.cuotas} cuotas`:''}`,`${a.desc||a.categoria} · ${fr(a.fecha)}${a.cuotas>1?` · total ${money(a.monto*a.cuotas,a.moneda)}`:''}`];
+   case'ingreso':return[`${a.es==='obra'?'Cobro de obra':'Ingreso'} ${money(a.monto,a.moneda)}`,`${a.desc||a.categoria} · ${fr(a.fecha)}`];
    case'transferencia':return[`Transferencia ${money(a.monto,a.moneda)}`,`${a.cuenta} → ${a.destino}${a.montoDest?` · recibís ${money(a.montoDest,a.monedaDest)}`:''} · ${fr(a.fecha)}`];
+   case'pase':return[a.ganancia?`Retiro de ganancia ${money(a.monto,a.moneda)}`:`Pasar ${money(a.monto,a.moneda)}`,`De ${a.de==='obra'?'obra':'personal'} a ${a.para==='obra'?'obra':'personal'}${a.ganancia?' · cuenta como ingreso tuyo':''} · ${fr(a.fecha)}`];
    case'tarea':return[`Tarea: ${a.titulo}`,`${fr(a.fecha)}${a.hora?' '+a.hora:''}${a.lista?' · '+a.lista:''}${a.repetir?' · '+REPS[a.repetir]:''}`];
    case'turno':return[`Turno: ${a.titulo}`,`${fr(a.fecha)}${a.hora?' '+a.hora:''}${a.lugar?' · '+a.lugar:''}`];
    case'nota':return[`Nota: ${a.titulo||'Sin título'}`,(a.texto||'').slice(0,80)];
    case'papel':return[`Vencimiento: ${a.nombre}`,`vence el ${fechaDM(a.vence)}`];
    case'factura':return[`Factura ${money(a.total)}`,`${a.cliente||'Cliente'} · ${fr(a.fecha)}`];
    case'km':return[`${a.auto}: ${nf0.format(a.km)} km`,'Actualizar kilómetros'];
+   case'auto':return[`Auto nuevo: ${a.nombre}`,`${a.patente?'Patente '+a.patente:'Sin patente'}${a.km?' · '+nf0.format(a.km)+' km':''}`];
+   case'service':return[`Service ${a.auto}: ${a.que}`,`${a.costo?money(a.costo)+' · ':''}${a.km?nf0.format(a.km)+' km · ':''}${fr(a.fecha)}${a.taller?' · '+a.taller:''}`];
+   case'habito':return[`Hábito nuevo: ${a.nombre}`,`${habFrecTxt({frec:a.frec,dias:a.dias,cada:a.cada})}${a.hora?' · '+a.hora:''}`];
+   case'habito_hecho':return[`${a.habito}: ${a.hecho?'hecho':'no lo hice'}`,fr(a.fecha)];
+   case'fijo':return[`${a.categoria==='Suscripciones'?'Suscripción':'Pago fijo'}: ${a.nombre}`,`${a.monto?money(a.monto,a.moneda)+' · ':''}${a.frecuencia==='anual'?'anual':'mensual'}, día ${a.dia}${a.debito?' · débito automático':''}`];
+   case'pagar_fijo':return[`${a.fijo}: ${a.yaPago?'ya figura pagado este mes':'marcar pagado'}`,a.yaPago?'No se carga de nuevo':'Se carga el gasto de este mes'];
   }return['','']}
+
+/* Intérprete sin IA (sin internet): gastos e ingresos simples */
+const KW_PERS={'Supermercado':'super|supermercado|coto|carrefour|jumbo|disco|vea|chino|almacen|verduleria|carniceria|dietetica|mercaderia','Comida afuera':'restaurant|resto|cena|almuerzo|pizza|delivery|rappi|pedidos ya|cafe|bar|helado|hamburguesa|sushi|parrilla|empanadas',
+  'Servicios':'luz|gas|agua|internet|telefono|celular|edenor|edesur|metrogas|aysa|fibertel|cable|telecentro','Alquiler / Expensas':'alquiler|expensas','Impuestos':'monotributo|afip|arca|abl|impuesto|iibb|ingresos brutos|ganancias',
+  'Transporte':'uber|cabify|didi|taxi|remis|colectivo|subte|tren|sube|peaje','Auto':'nafta|combustible|ypf|shell|axion|estacionamiento|cochera|mecanico|service|gomeria|lavadero|vtv|auto|patente',
+  'Salud':'farmacia|medico|dentista|prepaga|osde|swiss|galeno|remedio|medicamento|analisis|kinesiologo|psicolog|oculista','Ropa':'ropa|zapatillas|remera|pantalon|campera|zapatos|jean|buzo',
+  'Hogar':'tele|televisor|television|heladera|lavarropas|mueble|silla|sillon|colchon|ferreteria|pintureria|microondas|aire acondicionado|lampara|sabanas|cocina|electrodomestico|horno|ventilador',
+  'Ocio':'cine|teatro|recital|entradas?|juego|salida|viaje|vacaciones|hotel|boliche','Suscripciones':'netflix|spotify|disney|hbo|amazon|youtube|icloud|chatgpt|claude|suscripcion','Educación':'curso|libro|facultad|colegio|clases|capacitacion','Regalos':'regalo|cumple'};
+const KW_OBRA_G={'Materiales':'material|materiales|porcelanato|ceramica|cemento|arena|cal|ladrillos?|hierro|pintura|cano|canos|griferia|sanitarios?|durlock|madera|piso|revestimiento|placa|aberturas?|vidrio','Mano de obra':'mano de obra|albanil|oficial|ayudante|jornal|pintor|plomero|electricista|gasista|quincena|cuadrilla','Subcontratos':'subcontrat','Fletes':'flete|volquete|envio|camion','Herramientas':'herramienta|amoladora|taladro|disco de corte','Honorarios':'honorarios'};
+const KW_OBRA_I={'Anticipo':'anticipo|adelanto','Certificado':'certificado'};
+const KW_PERS_I={'Sueldo / Retiro':'sueldo|retiro','C2C':'c2c','Honorarios':'honorarios|planos?|proyecto|direccion de obra','Ventas':'vendi|venta','Inversiones':'plazo fijo|intereses|dividendos'};
+function catLocal(t,tipo,obra){const tabla=obra?(tipo==='ingreso'?KW_OBRA_I:KW_OBRA_G):(tipo==='ingreso'?KW_PERS_I:KW_PERS);const cats=catsDe(tipo,obra?FOBRA:FMIO);
+  for(const [c,re] of Object.entries(tabla))if(cats.includes(c)&&new RegExp('\\b('+re+')').test(t))return c;
+  return obra&&tipo==='ingreso'?'Cobro de cliente':cats.includes('Otros')?'Otros':cats[cats.length-1]}
+function montoLocal(t){let m=t.match(/\b(un|medio)\s+(palo|millon|melon)\b/);let best=m?(m[1]==='medio'?5e5:1e6):0;
+  if(/\bun millon y medio\b|\bpalo y medio\b/.test(t))return 15e5;
+  for(const x of t.matchAll(/(\d+(?:[.,]\d+)*)\s*(millones|millon|palos?|mill|m|mil|lucas?|k)?(?![\w])/g)){
+    const after=t.slice(x.index+x[0].length,x.index+x[0].length+9);if(!x[2]&&/^\s*(cuotas?|hs|horas?|km|dias|de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre))/.test(after))continue;
+    let v;const mul=x[2]?(/^(mil|luca|lucas|k)$/.test(x[2])?1e3:1e6):1;
+    if(mul>1){const s=x[1];v=/,\d{1,2}$|\.\d{1,2}$/.test(s)?parseFloat(s.replace(/\.(?=\d{3}\b)/g,'').replace(',','.')):parseMonto(s);v*=mul}else v=parseMonto(x[1]);
+    if(v>best)best=v}
+  return best}
+function cuentaLocal(t){const C=S.cfg.cuentas,f=re=>C.find(c=>re.test(sinAc(c)));
+  for(const c of C.slice().sort((a,b)=>b.length-a.length))if(t.includes(sinAc(c)))return c;
+  if(/\bmp\b|mercado ?pago/.test(t))return f(/mercado|\bmp\b/)||'';
+  if(/efectivo|cash|en mano|billete|plata en mano/.test(t))return f(/efect|mano|cash/)||'';
+  if(/\bvisa\b/.test(t))return f(/visa/)||C.find(esTarjeta)||f(/tarjeta|credito/)||'';
+  if(/\bmaster/.test(t))return f(/master/)||C.find(esTarjeta)||f(/tarjeta|credito/)||'';
+  if(/tarjeta|credito|\bamex\b/.test(t))return C.find(esTarjeta)||f(/tarjeta|credito/)||'';
+  if(/debito|transferencia|banco|cbu|alias/.test(t))return f(/banco|galicia|santander|nacion|provincia|bbva|macro|icbc|brubank/)||'';
+  return''}
+function parseLocal(texto){const t=sinAc(texto);const monto=montoLocal(t);if(!(monto>0))return{acciones:[],respuesta:'No encontré un monto. Probá con algo como “gasté 85 mil en el super con la visa”.'};
+  const tipo=/\b(cobre|cobro|cobramos|me pagaron|me transfirieron|ingreso|ingrese|entro|entraron|recibi|anticipo|certificado|vendi|honorarios de)\b/.test(t)?'ingreso':'gasto';
+  const obra=/\bobra\b|\bcliente\b|\banticipo\b|\bcertificado\b|mano de obra|\bmateriales\b/.test(t);
+  const moneda=/\b(dolares?|usd|u\$s|verdes|us\$)\b/.test(t)?'USD':'ARS';
+  const nc=(t.match(/(\d+)\s*cuotas?/)||[])[1];const cuotas=tipo==='gasto'&&nc?Math.max(1,Math.min(48,+nc)):1;
+  const fecha=/\banteayer\b/.test(t)?addDays(HOY(),-2):/\bayer\b/.test(t)?addDays(HOY(),-1):HOY();
+  const categoria=catLocal(t,tipo,obra);
+  let desc='';const dm=texto.match(/\b(?:en|de)\s+(?:una?|el|la|los|las|unos|unas)?\s*([^,.;\d]{3,40}?)(?=\s+(?:con|en|por|de|y|a|del|que|para|desde)\b|[,.;]|$)/i);
+  if(dm&&!/\b(cuotas?|efectivo|banco|visa|master|tarjeta|mercado|obra|personal)\b/i.test(dm[1]))desc=cap(dm[1].trim());
+  return{acciones:[{tipo,monto:cuotas>1?Math.round(monto/cuotas*100)/100:monto,moneda,es:obra?'obra':'personal',categoria,otrasCategorias:[],cuenta:cuentaLocal(t),fecha,desc,cuotas}],respuesta:''}}
+
+/* Dictado por voz */
+const SRc=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+function setMic(on){const b=$('#ai-mic');if(b){b.classList.toggle('on',on);const s=b.querySelector('span');if(s)s.textContent=on?'Te escucho… tocá para terminar':'Tocá y hablá'}}
+function dictar(auto){const t=$('#ai-t');
+  if(!SRc){if(t){t.focus()}toast('Tocá el micrófono del teclado para dictar');return}
+  if(rec){try{rec.stop()}catch(e){}return}
+  if(!t)return;const base=t.value.trim()?t.value.trim()+' ':'';let fin='';
+  try{rec=new SRc()}catch(e){rec=null;if(t)t.focus();toast('Tocá el micrófono del teclado para dictar');return}
+  rec.lang='es-AR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+  rec.onresult=e=>{let tmp='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript;else tmp+=r[0].transcript}t.value=base+fin+tmp};
+  rec.onerror=e=>{const er=e&&e.error;if(er==='not-allowed'||er==='service-not-allowed'){toast('Permití el micrófono, o usá el del teclado');t.focus()}else if(er==='no-speech')toast('No te escuché. Probá de nuevo.')};
+  rec.onend=()=>{rec=null;setMic(false);const tx=t.value.trim();if(auto&&fin.trim()&&tx&&S.sheet&&S.sheet.kind==='ai'&&S.ai&&S.ai.estado!=='pensando')correrAI(tx)};
+  try{rec.start();setMic(true)}catch(e){rec=null;setMic(false)}}
+
 let aiCtl=null;
+const AI_ERR={sin_clave:'Falta guardar la clave de Anthropic en Supabase (ANTHROPIC_API_KEY).',clave_invalida:'La clave de Anthropic no es válida. Revisala en Supabase.',sin_credito:'Tu cuenta de Anthropic se quedó sin crédito.',rate_limited:'Llegaste al límite de uso por ahora. Probá en un rato.',modelo:'El modelo de IA no respondió. Avisame y lo cambio.',invalid_json:'No pude interpretar la respuesta. Probá decirlo de otra forma.',auth:'Tu sesión venció. Cerrá sesión y volvé a entrar.'};
 async function correrAI(texto){
+  if(rec){try{rec.abort()}catch(e){}rec=null}
+  const local=nota=>{const r=parseLocal(texto);S.ai={estado:'listo',texto,acciones:r.acciones.map(normAcc).filter(Boolean).map(a=>({...a,_on:true})),respuesta:r.respuesta,nota};renderAI()};
+  if(!smp||!navigator.onLine){local(navigator.onLine?'Lo interpreté sin IA: revisá los datos.':'Sin internet: lo interpreté sin IA, revisá los datos.');return}
   S.ai={estado:'pensando',texto,acciones:[],respuesta:''};renderAI();
   aiCtl=new AbortController();
   try{
     const r=await smp.json(promptAI(texto),{cache:false,signal:aiCtl.signal,modelTier:'default',effort:'low'});
     const acc=(Array.isArray(r&&r.acciones)?r.acciones:[]).map(normAcc).filter(Boolean);
-    S.ai={estado:'listo',texto,acciones:acc.map(a=>({...a,_on:true})),respuesta:String((r&&r.respuesta)||'')};
+    S.ai={estado:'listo',texto,acciones:acc.map(a=>({...a,_on:!(a.tipo==='pagar_fijo'&&a.yaPago)})),respuesta:String((r&&r.respuesta)||'')};
   }catch(e){
     const c=e&&e.code;if(c==='cancelled'){closeSheet();return}
-    if(c==='not_granted'||c==='sampling_disabled'||c==='not_declared'||c==='capability_disabled'||c==='capability_removed'){smp=null;S.ai={estado:'error',texto,msg:'Para usar la carga hablando tenés que permitir que la libreta use Claude. Volvé a abrir la libreta y aceptá el permiso.'}}
-    else S.ai={estado:'error',texto,msg:c==='rate_limited'?'Llegaste al límite de uso por ahora. Probá en un rato.':c==='invalid_json'?'No pude interpretar la respuesta. Probá escribirlo de otra forma.':'No se pudo procesar. Revisá la conexión y probá de nuevo.'};
+    if(c==='not_granted'||c==='sampling_disabled'||c==='not_declared'||c==='capability_disabled'||c==='capability_removed'){smp=null;local('La IA no está habilitada acá: lo interpreté sin IA.');return}
+    const msg=AI_ERR[c]||'No se pudo conectar con la IA.';local(msg+' Mientras tanto lo interpreté sin IA.');return;
   }
   renderAI();
 }
+function accOpts(a,i){if(!(a.tipo==='gasto'||a.tipo==='ingreso'||pideCuenta(a)))return'';let h='';
+  if(a.tipo==='gasto'||a.tipo==='ingreso'){
+    h+=`<div class="aopt"><span class="aol">Es</span>${['personal','obra'].map(v=>`<button type="button" class="chip ${a.es===v?'on':''}" data-act="aiset" data-i="${i}" data-f="es" data-v="${v}">${v==='obra'?'Obra':'Personal'}</button>`).join('')}</div>`;
+    const cats=catsDe(a.tipo,a.es==='obra'?FOBRA:FMIO);
+    h+=`<div class="aopt"><span class="aol">Categoría</span>${[a.categoria,...(a.otras||[])].map(c=>`<button type="button" class="chip ${a.categoria===c?'on':''}" data-act="aiset" data-i="${i}" data-f="categoria" data-v="${esc(c)}">${esc(c)}</button>`).join('')}<select class="inp sm" id="ai-cat-${i}" data-i="${i}" aria-label="Otra categoría"><option value="">Otra…</option>${cats.filter(c=>c!==a.categoria&&!(a.otras||[]).includes(c)).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`}
+  if(pideCuenta(a)){const q=a.tipo==='ingreso'?'¿Dónde entró?':a.tipo==='pase'?'¿En qué cuenta está?':'¿Con qué pagaste?';
+    h+=`<div class="aopt"><span class="aol ${a.cuenta?'':'need'}">${q}</span>${S.cfg.cuentas.map(c=>`<button type="button" class="chip ${a.cuenta===c?'on':''}" data-act="aiset" data-i="${i}" data-f="cuenta" data-v="${esc(c)}">${ic(icoCuenta(c,esTarjeta(c)),14)}${esc(c)}</button>`).join('')}</div>`}
+  return h}
 function renderAI(){
-  if(!S.sheet||S.sheet.kind!=='ai')return;const A=S.ai||{estado:'nuevo'};let h=`<h2>${ic('spark',20)} Cargar o preguntar</h2>`;
+  if(!S.sheet||S.sheet.kind!=='ai')return;const A=S.ai||{estado:'nuevo'};let h=`<h2>${ic('spark',20)} Decime qué cargo</h2>`;
   if(A.estado==='nuevo'||A.estado==='error'){
-    h+=`<form data-form="aiq"><textarea class="inp" id="ai-t" rows="3" placeholder="Ej: “super 85 mil con la visa, nafta 60 lucas MP y mañana 10hs reunión de obra en Palermo”">${esc(A.texto||'')}</textarea>
-     ${A.estado==='error'?`<p class="ferr">${esc(A.msg)}</p>`:''}<p class="hint">Podés usar el micrófono del teclado para dictar. También podés preguntar: “¿cuánto gasté en el auto este año?”.</p>
-     <div class="sacts"><span class="sp"></span><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Enviar</button></div></form>`;
+    h+=`<form data-form="aiq"><button type="button" class="micb ${rec?'on':''}" id="ai-mic" data-act="aimic">${ic('mic',24)}<span>${rec?'Te escucho… tocá para terminar':'Tocá y hablá'}</span></button>
+     <textarea class="inp" id="ai-t" rows="3" placeholder="Ej: “gasté 2 millones en una tele en 6 cuotas con la visa”, “cobré 1 palo de anticipo de obra en el banco”, “hoy fui al gimnasio”">${esc(A.texto||'')}</textarea>
+     ${A.estado==='error'?`<p class="ferr">${esc(A.msg)}</p>`:''}<p class="hint">Podés cargar gastos, cobros de obra, tareas, turnos, hábitos, autos, services, pagos fijos y más, o preguntar: “¿cuánto gasté en el auto este año?”. Antes de guardar te muestro todo para confirmar.</p>
+     <div class="sacts"><span class="sp"></span><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Listo</button></div></form>`;
   }else if(A.estado==='pensando'){
     h+=`<p class="muted small">“${esc(A.texto)}”</p><div class="thinking"><i></i>Pensando…</div><div class="sacts"><span class="sp"></span><button type="button" class="btn" data-act="aistop">Cancelar</button></div>`;
   }else{
-    h+=`<p class="muted small">“${esc(A.texto)}”</p>`;
+    h+=`<p class="muted small">“${esc(A.texto)}”</p>${A.nota?`<p class="hint warnt">${esc(A.nota)}</p>`:''}`;
     if(A.respuesta)h+=`<div class="card" style="background:var(--sunk);border:0"><p class="answer">${esc(A.respuesta)}</p></div>`;
-    if(A.acciones.length){h+=`<div>${A.acciones.map((a,i)=>{const[t1,t2]=descAcc(a);return`<label class="acc"><input type="checkbox" id="ai-c${i}" data-i="${i}" ${a._on?'checked':''}><span class="txt"><span class="rt" style="display:block">${esc(t1)}</span><span class="rm">${esc(t2)}</span></span><button type="button" class="btn sm" data-act="airev" data-i="${i}">Revisar</button></label>`}).join('')}</div>
-      <div class="sacts"><button type="button" class="btn" data-act="ainew">Escribir otra cosa</button><span class="sp"></span><button type="button" class="btn pri" data-act="aisave">Guardar ${A.acciones.filter(a=>a._on).length>1?'todo':''}</button></div>`}
-    else h+=`<div class="sacts"><button type="button" class="btn" data-act="ainew">Preguntar otra cosa</button><span class="sp"></span><button type="button" class="btn pri" data-act="close">Listo</button></div>`;
+    if(A.acciones.length){const nf=A.acciones.filter(falta).length,non=A.acciones.filter(a=>a._on).length;
+      h+=`<div>${A.acciones.map((a,i)=>{const[t1,t2]=descAcc(a);return`<div class="acc ${a._on?'':'off'}"><input type="checkbox" id="ai-c${i}" data-i="${i}" ${a._on?'checked':''} aria-label="Incluir"><div class="txt"><span class="rt" style="display:block">${esc(t1)}</span><span class="rm">${esc(t2)}</span>${a._on?accOpts(a,i):''}</div><button type="button" class="btn sm" data-act="airev" data-i="${i}">Editar</button></div>`}).join('')}</div>
+      <div class="sacts"><button type="button" class="btn" data-act="ainew">${ic('mic',15)}Otra cosa</button><span class="sp"></span><button type="button" class="btn pri" data-act="aisave" ${nf||!non?'disabled':''}>${nf?'Elegí la cuenta':non>1?'Guardar todo':'Guardar'}</button></div>`}
+    else h+=`<div class="sacts"><button type="button" class="btn" data-act="ainew">${ic('mic',15)}Decir otra cosa</button><span class="sp"></span><button type="button" class="btn pri" data-act="close">Listo</button></div>`;
   }
   $('#sheet').innerHTML=h;
-  if(A.estado==='nuevo'||A.estado==='error')setTimeout(()=>{const t=$('#ai-t');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},40);
+  if((A.estado==='nuevo'||A.estado==='error')&&!A.voz)setTimeout(()=>{const t=$('#ai-t');if(t&&!rec){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},40);
 }
 async function aplicarAcc(a){
+  const fz=a.es==='obra'?FOBRA:FMIO;
   switch(a.tipo){
-   case'gasto':case'ingreso':return crearMov({tipo:a.tipo,monto:a.monto,moneda:a.moneda,categoria:a.categoria,cuenta:a.cuenta,fecha:a.fecha,desc:a.desc||'',cuotas:a.cuotas});
+   case'gasto':case'ingreso':return crearMov({tipo:a.tipo,fondo:fz,monto:a.monto,moneda:a.moneda,categoria:a.categoria,cuenta:a.cuenta,fecha:a.fecha,desc:a.desc||'',cuotas:a.cuotas});
    case'transferencia':return crearMov({tipo:'transf',monto:a.monto,moneda:a.moneda,cuenta:a.cuenta,destino:a.destino,montoDest:a.montoDest,monedaDest:a.monedaDest,fecha:a.fecha,desc:a.desc||''});
+   case'pase':return crearPase({desde:a.de==='obra'?FOBRA:FMIO,hacia:a.para==='obra'?FOBRA:FMIO,cuenta:a.cuenta,moneda:a.moneda,monto:a.monto,ganancia:a.ganancia,fecha:a.fecha,desc:a.desc||''});
    case'tarea':return put('tareas',newId('tareas'),{titulo:a.titulo,fecha:a.fecha||(a.repetir?HOY():''),hora:a.hora||'',lista:a.lista||'',prio:a.prio||'normal',nota:'',repetir:a.repetir||'',hecha:false,hechaEl:null,creado:Date.now()});
    case'turno':return put('turnos',newId('turnos'),{titulo:a.titulo,fecha:a.fecha,hora:a.hora||'',lugar:a.lugar||'',tipo:'Personal',nota:'',creado:Date.now()});
    case'nota':return put('notas',newId('notas'),{titulo:a.titulo||'',texto:a.texto||'',color:'none',fijada:false,creado:Date.now(),editado:Date.now()});
    case'papel':return put('papeles',newId('papeles'),{nombre:a.nombre,vence:a.vence,avisar:30,cat:'Personal',nota:'',creado:Date.now()});
    case'factura':return crearFactura({tipo:'emitida',fecha:a.fecha,numero:'',cliente:a.cliente||'',neto:a.total,iva:0,alic:0,total:a.total},true);
    case'km':{const v=S.vehiculos.find(x=>x.id===a.vid);if(!v)return;return put('vehiculos',v.id,{...strip(v),km:a.km,kmFecha:HOY()})}
+   case'auto':return put('vehiculos',newId('vehiculos'),{nombre:a.nombre,patente:a.patente||'',km:a.km||0,kmFecha:a.km?HOY():null,creado:Date.now()});
+   case'service':{const v=S.vehiculos.find(x=>x.id===a.vid);if(!v)return false;
+     const ok=await put('servicios',newId('servicios'),{vehiculo:v.id,tipo:a.que,fecha:a.fecha,km:a.km||0,costo:a.costo||0,taller:a.taller||'',proxKm:a.proxKm||null,proxFecha:a.proxFecha||null,nota:'',creado:Date.now()});
+     if(ok&&a.km>(+v.km||0))await put('vehiculos',v.id,{...strip(v),km:a.km,kmFecha:a.fecha});
+     if(ok&&a.costo>0)await crearMov({tipo:'gasto',monto:a.costo,moneda:'ARS',categoria:S.cfg.catGasto.includes('Auto')?'Auto':'Otros',cuenta:a.cuenta||S.cfg.cuentas[0],fecha:a.fecha,desc:`${a.que}${a.taller?' · '+a.taller:''}`});
+     return ok}
+   case'habito':return put('habitos',newId('habitos'),{nombre:a.nombre,frec:a.frec,dias:a.frec==='dias'?a.dias:[],cada:a.frec==='cada'?a.cada:null,desde:HOY(),hora:a.hora||'',hechos:{},creado:Date.now()});
+   case'habito_hecho':{const hb=S.habitos.find(x=>x.id===a.hid);if(!hb)return false;return put('habitos',hb.id,{...strip(hb),hechos:{...(hb.hechos||{}),[a.fecha]:a.hecho?1:0}})}
+   case'fijo':return put('fijos',newId('fijos'),{nombre:a.nombre,monto:a.monto||0,moneda:a.moneda,dia:a.dia,frecuencia:a.frecuencia,mes:a.frecuencia==='anual'?+HOY().slice(5,7):null,categoria:a.categoria,cuenta:a.cuenta,debito:a.debito,pagados:{},creado:Date.now()});
+   case'pagar_fijo':{const f=S.fijos.find(x=>x.id===a.fid);if(!f||a.yaPago)return false;await pagar(f,HOY().slice(0,7));return true}
   }}
 const accToSheet=a=>{switch(a.tipo){
-  case'gasto':case'ingreso':return['mov',{tipo:a.tipo,monto:a.monto,moneda:a.moneda,categoria:a.categoria,cuenta:a.cuenta,fecha:a.fecha,desc:a.desc,cuotas:a.cuotas}];
+  case'gasto':case'ingreso':return['mov',{tipo:a.tipo,fondo:a.es==='obra'?FOBRA:FMIO,monto:a.monto,moneda:a.moneda,categoria:a.categoria,cuenta:a.cuenta||undefined,fecha:a.fecha,desc:a.desc,cuotas:a.cuotas}];
   case'transferencia':return['mov',{tipo:'transf',monto:a.monto,moneda:a.moneda,cuenta:a.cuenta,destino:a.destino,montoDest:a.montoDest,monedaDest:a.monedaDest,fecha:a.fecha,desc:a.desc}];
+  case'pase':return['pase',{fondo:a.de==='obra'?FOBRA:FMIO,fondoDest:a.para==='obra'?FOBRA:FMIO,monto:a.monto,moneda:a.moneda,cuenta:a.cuenta||undefined,fecha:a.fecha,desc:a.desc}];
   case'tarea':return['tarea',a];case'turno':return['turno',a];case'nota':return['nota',a];case'papel':return['papel',{...a,avisar:30,cat:'Personal'}];
-  case'factura':return['factura',{fecha:a.fecha,cliente:a.cliente,total:a.total}];case'km':return null}};
+  case'factura':return['factura',{fecha:a.fecha,cliente:a.cliente,total:a.total}];
+  case'auto':return['vehiculo',{nombre:a.nombre,patente:a.patente,km:a.km}];
+  case'service':return['servicio',{vehiculo:a.vid,tipo:a.que,costo:a.costo,km:a.km,fecha:a.fecha,taller:a.taller,proxKm:a.proxKm,proxFecha:a.proxFecha}];
+  case'habito':return['habito',{nombre:a.nombre,frec:a.frec,dias:a.dias,cada:a.cada,hora:a.hora}];
+  case'fijo':return['fijo',{nombre:a.nombre,monto:a.monto,moneda:a.moneda,dia:a.dia,frecuencia:a.frecuencia,categoria:a.categoria,cuenta:a.cuenta,debito:a.debito}];
+  default:return null}};
 
 /* ---------- creadores ---------- */
 async function crearMov(o){
@@ -1835,7 +1976,7 @@ function openSheet(kind,id,preset){
   let it=null;
   if(kind==='clave'){if(!VK){if(!$('#scrim').hidden)closeSheet();go('claves');toast('Desbloqueá la bóveda primero');return}it=id?(VI||[]).find(x=>x.id===id):null}
   else if(kind==='servicio'&&!S.vehiculos.length){kind='vehiculo';toast('Primero agregá tu auto')}
-  else if(kind==='ai'){S.sheet={kind};S.ai=preset&&preset.texto?S.ai:{estado:'nuevo',texto:''};$('#scrim').hidden=false;if(preset&&preset.texto)correrAI(preset.texto);else renderAI();return}
+  else if(kind==='ai'){S.sheet={kind};S.ai=preset&&preset.texto?S.ai:{estado:'nuevo',texto:'',voz:!!(preset&&preset.voz)};$('#scrim').hidden=false;if(preset&&preset.texto)correrAI(preset.texto);else{renderAI();if(preset&&preset.voz)setTimeout(()=>dictar(true),80)}return}
   else if(id&&COLMAP[kind]){it=S[COLMAP[kind]].find(x=>x.id===id);if(!it)return}
   S.sheet={kind,it,preset};
   const x=it||preset||{};
@@ -1846,7 +1987,7 @@ function openSheet(kind,id,preset){
   if(kind==='factura')calcIVA();if(kind==='mov')movSync();if(kind==='fijo')fijoSync();if(kind==='habito')habSync();if(kind==='pase')paseSync();hidratar($('#sheet'));
   setTimeout(()=>{const f=$('#sheet [autofocus]');if(f&&matchMedia('(min-width:700px)').matches)f.focus()},40);
 }
-function closeSheet(){if(aiCtl){try{aiCtl.abort()}catch(e){}aiCtl=null}$('#scrim').hidden=true;$('#sheet').innerHTML='';S.sheet=null}
+function closeSheet(){if(aiCtl){try{aiCtl.abort()}catch(e){}aiCtl=null}if(rec){try{rec.abort()}catch(e){}rec=null}$('#scrim').hidden=true;$('#sheet').innerHTML='';S.sheet=null}
 function ferr(t){const e=$('#ferr');e.textContent=t;e.hidden=false}
 function calcIVA(){const c=$('#f-calc');if(c){const n=parseMonto($('#f-neto').value)||0,a=parseFloat($('#f-alic').value)||0;const iva=n*a/100;c.textContent=n?`IVA ${money(iva)} · Total ${money(n+iva)}`:''}
   const w=$('#f-ming-w'),r=$('#f-ft-r');if(w)w.hidden=!!(r&&r.checked)}
@@ -2036,9 +2177,14 @@ function act(a,t){
   else if(a==='vcopy'){const x=(VI||[]).find(y=>y.id===id);if(x)copiar(x[t.dataset.f]||'')}
   else if(a==='vgen'){const i=$('#f-pw');if(i)i.value=genPass(20)}
   else if(a==='aistop'){if(aiCtl)aiCtl.abort()}
-  else if(a==='ainew'){S.ai={estado:'nuevo',texto:''};renderAI()}
+  else if(a==='ainew'){S.ai={estado:'nuevo',texto:'',voz:true};renderAI();setTimeout(()=>dictar(true),60)}
+  else if(a==='voz')openSheet('ai',null,{voz:true});
+  else if(a==='aimic')dictar(true);
+  else if(a==='aiset'&&S.ai){const ac=S.ai.acciones[+t.dataset.i];if(ac){const f=t.dataset.f,val=t.dataset.v;ac[f]=val;
+    if(f==='es'){const cats=catsDe(ac.tipo,val==='obra'?FOBRA:FMIO);if(!cats.includes(ac.categoria)){const r=catLocal(sinAc((ac.desc||'')+' '+S.ai.texto),ac.tipo,val==='obra');ac.categoria=r}ac.otras=(ac.otras||[]).filter(c=>cats.includes(c)&&c!==ac.categoria)}
+    if(f==='categoria')ac.otras=(ac.otras||[]).filter(c=>c!==val).concat([]);renderAI()}}
   else if(a==='airev'){const ac=S.ai.acciones[+t.dataset.i];const r=accToSheet(ac);if(!r){toast('Esto se guarda directo');return}S.ai.acciones.splice(+t.dataset.i,1);openSheet(r[0],null,r[1])}
-  else if(a==='aisave'){const acc=S.ai.acciones.filter(x=>x._on);closeSheet();(async()=>{let n=0;for(const x of acc){const ok=await aplicarAcc(x);if(ok!==false)n++}toast(n===1?'Guardado':`${n} cosas guardadas`)})()}
+  else if(a==='aisave'){if(S.ai.acciones.some(falta)){toast('Elegí la cuenta');return}const acc=S.ai.acciones.filter(x=>x._on);closeSheet();(async()=>{let n=0;for(const x of acc){const ok=await aplicarAcc(x);if(ok!==false&&ok!==undefined)n++}toast(n===1?'Guardado':`${n} cosas guardadas`)})()}
   else if(a==='sdelg'){
     if(!t.classList.contains('armed')){t.classList.add('armed');t.textContent='Tocá de nuevo para confirmar';setTimeout(()=>{if(t.isConnected){t.classList.remove('armed');t.textContent='Borrar las cuotas que faltan'}},3500);return}
     const {it}=S.sheet;closeSheet();const ids=S.movs.filter(x=>x.grupo===it.grupo&&(x.fecha||'')>=(it.fecha||'')).map(x=>x.id);
@@ -2104,12 +2250,13 @@ document.addEventListener('change',e=>{const t=e.target,id=t.id;
   else if(id==='f-pde'||id==='f-pa')paseSync();
   else if(id==='ffondo'){S.ffondo=t.value;render()}
   else if(id==='f-alic'||t.name==='f-ftipo')calcIVA();
-  else if(id.startsWith('ai-c')&&S.ai){S.ai.acciones[+t.dataset.i]._on=t.checked}
+  else if(id.startsWith('ai-cat-')&&S.ai){const ac=S.ai.acciones[+t.dataset.i];if(ac&&t.value){ac.otras=[ac.categoria,...(ac.otras||[])].filter(c=>c!==t.value).slice(0,2);ac.categoria=t.value;renderAI()}}
+  else if(id.startsWith('ai-c')&&S.ai){S.ai.acciones[+t.dataset.i]._on=t.checked;renderAI()}
 });
 document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target,k=f.dataset.form;if(k==='login')return;
   if(k==='sheet')submitSheet(f);
-  else if(k==='cmd'){const i=$('#cmd');const tx=i.value.trim();if(!tx||!smp)return;i.value='';openSheet('ai',null,{texto:tx})}
-  else if(k==='aiq'){const tx=$('#ai-t').value.trim();if(!tx)return;if(!smp){toast('La carga hablando no está disponible en esta pantalla.');return}correrAI(tx)}
+  else if(k==='cmd'){const i=$('#cmd');const tx=i.value.trim();if(!tx){openSheet('ai',null,{voz:true});return}i.value='';openSheet('ai',null,{texto:tx})}
+  else if(k==='aiq'){const tx=$('#ai-t').value.trim();if(!tx){dictar(true);return}correrAI(tx)}
   else if(k==='qt'){const i=$('#qt');const titulo=i.value.trim();if(!titulo)return;
     const id=newId('tareas');put('tareas',id,{titulo,fecha:S.tf==='hoy'?HOY():'',hora:'',lista:S.tl||'',prio:'normal',repetir:'',nota:'',hecha:false,hechaEl:null,creado:Date.now()});i.value='';i.focus()}
   else if(k==='chip'){const ck=f.dataset.k;const i=f.querySelector('input');const v=i.value.trim();if(v&&!S.cfg[ck].includes(v)){S.cfg[ck]=[...S.cfg[ck],v];putCfg();render()}}
@@ -2134,7 +2281,7 @@ Object.keys(NAVIC).forEach(k=>{const a=$('#n-'+k);if(a){a.innerHTML=ic(NAVIC[k],
 $('#n-plus').innerHTML=ic('plus',26);
 $('#n-mas').innerHTML=ic('more',20)+'<span>Más</span>';
 $('#fab').innerHTML=ic('plus',24);
-applyTema();applyOjo();
+applyTema();applyOjo();{const bv=$('#b-voz');if(bv)bv.innerHTML=ic('mic',18)}
 const QUICK={cargar:1,gasto:1,ingreso:1,tarea:1,hablar:1};let quick=null,cfgOk=false;
 function abrirQuick(q){try{history.replaceState(null,'','#inicio')}catch(e){}if(q==='gasto'||q==='ingreso')openSheet('mov',null,{tipo:q});else if(q==='tarea')openSheet('tarea',null,{fecha:HOY()});else if(q==='hablar'&&smp)openSheet('ai');else openSheet('menu')}
 {const h=(location.hash||'').slice(1);if(TITLES[h])S.view=h;else if(QUICK[h])quick=h}
@@ -2219,6 +2366,13 @@ async function actualizarDolar(){
     const d=new Date();await put('cotiz','actual',{...(c||{}),...out,fecha:h,hora:pad(d.getHours())+':'+pad(d.getMinutes()),fuente:'DolarApi',ts:Date.now()});
   }catch(e){}
 }
+function aiSite(){if(!SB||!CFG.supabaseUrl)return null;return{async json(prompt,o){
+  let token='';try{const r=await SB.auth.getSession();token=r&&r.data&&r.data.session&&r.data.session.access_token||''}catch(e){}
+  if(!token)throw{code:'auth'};let r;
+  try{r=await fetch(CFG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/libreta-ia',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,apikey:CFG.supabaseKey},body:JSON.stringify({prompt}),signal:o&&o.signal})}
+  catch(e){throw{code:e&&e.name==='AbortError'?'cancelled':'red'}}
+  let j=null;try{j=await r.json()}catch(e){}
+  if(!r.ok||!j||j.error)throw{code:(j&&j.error)||('http_'+r.status)};return j}}}
 const sbUrls={};
 function filesFromSB(){if(!SB)return null;const B=()=>SB.storage.from('documentos');return{store:'sb',
   async upload(blob,type,ext){const key=UID+'/'+rid()+'.'+(ext||'bin');const{error}=await B().upload(key,blob,{contentType:type,upsert:false,cacheControl:'3600'});
@@ -2226,7 +2380,7 @@ function filesFromSB(){if(!SB)return null;const B=()=>SB.storage.from('documento
   async url(k){const c=sbUrls[k];if(c&&c.t>Date.now())return c.u;const{data,error}=await B().createSignedUrl(k,3600);if(error||!data)throw error||new Error('sin url');sbUrls[k]={u:data.signedUrl,t:Date.now()+50*60e3};return data.signedUrl},
   async remove(k){try{await B().remove([k])}catch(e){}}}}
 async function boot(){
-  db=makeDB();dl=DL;smp=null;owner=true;FILES=filesFromSB();
+  db=makeDB();dl=DL;smp=aiSite();owner=true;FILES=filesFromSB();
   const onErr0=()=>{syncErr=true;render()};
   try{await db.ready()}catch(e){onErr0();toast('No se pudieron cargar los datos. Conectate a internet una vez para bajarlos.')}
   S.booting=false;
