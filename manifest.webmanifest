@@ -2,15 +2,16 @@
   "name": "Libreta",
   "short_name": "Libreta",
   "description": "Mi libreta personal: plata, tareas, agenda, impuestos y más.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0E1F78",
-  "theme_color": "#1B31B8",
+  "background_color": "#FFFFFF",
+  "theme_color": "#22304A",
   "lang": "es-AR",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-v2-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-v2-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

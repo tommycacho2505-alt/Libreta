@@ -1,6 +1,6 @@
 // Libreta: guarda la app en el equipo para que abra sin internet.
-const VERSION='libreta-2026-10-28c';
-const BASE=['./','./index.html','./config.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png','./favicon-32.png'];
+const VERSION='libreta-2026-10-28d';
+const BASE=['./','./index.html','./config.js','./manifest.webmanifest?v=2','./icon-v2-192.png','./icon-v2-512.png','./icon-v2-maskable.png','./apple-touch-icon-v2.png','./favicon-v2-32.png'];
 const EXTERNOS=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(VERSION);await c.addAll(BASE);
   for(const u of EXTERNOS){try{await c.add(new Request(u,{mode:'cors'}))}catch(err){}}await self.skipWaiting()})())});
