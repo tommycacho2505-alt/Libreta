@@ -810,7 +810,7 @@ const DEF={
   dolarRef:'mep'
 };
 const COLS=['movs','tareas','notas','turnos','fijos','facturas','papeles','vehiculos','servicios','archivos','habitos'];
-const COLMAP={pase:'movs',habito:'habitos',mov:'movs',ajmov:'movs',archivo:'archivos',tarea:'tareas',nota:'notas',turno:'turnos',fijo:'fijos',factura:'facturas',papel:'papeles',vehiculo:'vehiculos',servicio:'servicios'};
+const COLMAP={reparto:'movs',pase:'movs',habito:'habitos',mov:'movs',ajmov:'movs',archivo:'archivos',tarea:'tareas',nota:'notas',turno:'turnos',fijo:'fijos',factura:'facturas',papel:'papeles',vehiculo:'vehiculos',servicio:'servicios'};
 const TITLES={inicio:'Inicio',finanzas:'Plata',resumen:'Resumen',tareas:'Tareas',agenda:'Agenda',notas:'Notas',impuestos:'Impuestos',papeles:'Papeles',auto:'Auto',claves:'Claves',ajustes:'Ajustes'};
 const NAVIC={inicio:'home',finanzas:'wallet',resumen:'chart',tareas:'check',agenda:'cal',notas:'note',impuestos:'receipt',papeles:'idcard',auto:'car',claves:'key',ajustes:'gear'};
 const MAS=['resumen','agenda','notas','impuestos','papeles','auto','claves','ajustes'];
@@ -837,7 +837,7 @@ function undoRec(col,id,data){if(undoMudo||!UNDO_COLS.has(col))return;
 function renderUndo(){const b=$('#b-undo');if(b)b.hidden=!UNDO.length}
 function undoTexto(e){const op=e.ops[0],d=op.now||op.prev||{};const verbo=!op.prev?'Cargaste':!op.now?'Borraste':'Cambiaste';
   let que='';switch(op.col){
-    case'movs':que=d.pase?`pase ${money(d.monto,d.moneda)} (${fondoN(d.fondo).toLowerCase()} → ${fondoN(d.fondoDest).toLowerCase()})`:d.tipo==='ajuste'?`ajuste de ${d.cuenta||'saldo'}`:`${d.tipo==='ingreso'?'ingreso':d.tipo==='transf'?'transferencia':'gasto'} ${money(d.monto,d.moneda)}${d.desc?' · '+d.desc:d.categoria?' · '+d.categoria:''}`;break;
+    case'movs':que=d.tipo==='reparto'?'reparto obra / personal':d.pase?`pase ${money(d.monto,d.moneda)} (${fondoN(d.fondo).toLowerCase()} → ${fondoN(d.fondoDest).toLowerCase()})`:d.tipo==='ajuste'?`ajuste de ${d.cuenta||'saldo'}`:`${d.tipo==='ingreso'?'ingreso':d.tipo==='transf'?'transferencia':'gasto'} ${money(d.monto,d.moneda)}${d.desc?' · '+d.desc:d.categoria?' · '+d.categoria:''}`;break;
     case'tareas':que=`tarea “${d.titulo||''}”`;break;case'notas':que=`nota “${d.titulo||'sin título'}”`;break;case'turnos':que=`turno “${d.titulo||''}”`;break;
     case'fijos':que=`pago fijo ${d.nombre||''}`;break;case'facturas':que=`factura ${money(d.total||0)}`;break;case'papeles':que=`vencimiento ${d.nombre||''}`;break;
     case'vehiculos':que=`auto ${d.nombre||''}`;break;case'servicios':que=`service ${d.tipo||''}`;break;
@@ -903,7 +903,8 @@ const movsMesTodos=m=>S.movs.filter(x=>(x.fecha||'').startsWith(m));
 const movsMes=m=>persList(movsMesTodos(m));
 function fondoSaldos(){const o={};const g=f=>o[f]||(o[f]={ARS:0,USD:0,ing:{ARS:0,USD:0},gas:{ARS:0,USD:0},ctas:{},n:0});
   const add=(f,c,mon,v)=>{const F=g(f);F[mon]=(F[mon]||0)+v;const C=F.ctas[c]||(F.ctas[c]={ARS:0,USD:0});C[mon]=(C[mon]||0)+v};
-  S.movs.forEach(x=>{const f=fk(x.fondo),mo=x.moneda||'ARS',m=+x.monto||0;g(f).n++;
+  S.movs.forEach(x=>{if(x.tipo==='reparto'){(x.cambios||[]).forEach(c=>{const v=+c.obra||0;if(!v)return;add(FOBRA,c.cuenta,c.moneda||'ARS',v);add(FMIO,c.cuenta,c.moneda||'ARS',-v)});return}
+    const f=fk(x.fondo),mo=x.moneda||'ARS',m=+x.monto||0;g(f).n++;
     if(x.tipo==='transf'){const f2=x.fondoDest?fk(x.fondoDest):f;if(f2!==f)g(f2).n++;add(f,x.cuenta||'Sin cuenta',mo,-m);add(f2,x.destino||'Sin cuenta',x.monedaDest||mo,+(x.montoDest||m))}
     else{add(f,x.cuenta||'Sin cuenta',mo,x.tipo==='gasto'?-m:m);if(x.tipo==='ingreso')g(f).ing[mo]+=m;else if(x.tipo==='gasto')g(f).gas[mo]+=m}});
   return o}
@@ -933,7 +934,7 @@ const cuentaPago=()=>S.cfg.cuentas.find(c=>!esTarjeta(c)&&/banco/i.test(c))||S.c
 const rateOf=k=>{const r=S.cotiz&&S.cotiz[k];if(!r)return 0;const c=+r.compra||0,v=+r.venta||0;return c&&v?(c+v)/2:(v||c)};
 const refRate=()=>rateOf(S.cfg.dolarRef||'mep')||rateOf('mep')||rateOf('oficial');
 const tarjRate=()=>rateOf('tarjeta')||rateOf('oficial')*1.3;
-function saldos(hasta){const acc={};S.movs.forEach(x=>{if(hasta&&(x.fecha||'')>hasta)return;const mo=x.moneda||'ARS',m=+x.monto||0;
+function saldos(hasta){const acc={};S.movs.forEach(x=>{if(hasta&&(x.fecha||'')>hasta)return;if(x.tipo==='reparto')return;const mo=x.moneda||'ARS',m=+x.monto||0;
   const add=(c,mon,v)=>{acc[c]=acc[c]||{ARS:0,USD:0};acc[c][mon]=(acc[c][mon]||0)+v};
   if(x.tipo==='transf'){add(x.cuenta||'Sin cuenta',mo,-m);add(x.destino||'Sin cuenta',x.monedaDest||mo,+(x.montoDest||m))}
   else add(x.cuenta||'Sin cuenta',mo,x.tipo==='ingreso'||x.tipo==='ajuste'?m:-m)});return acc}
@@ -1016,7 +1017,7 @@ function avisos(){
   Object.keys(S.cfg.tarjetas).forEach(n=>{const c=ciclo(n);const dc=diasHasta(c.cierre),dv=diasHasta(c.venceAnt);
     if(!c.pagadoAnt&&c.anterior.ars+c.anterior.usd>0&&dv<=3)out.push({k:dv<0?'neg':'warn',t:`${n}: el resumen de ${money0(c.anterior.ars)}${c.anterior.usd?' + '+usd0(c.anterior.usd):''} ${dv<0?'venció':dv===0?'vence hoy':'vence el '+fechaDia(c.venceAnt)}`,go:'finanzas',ftab:'tarj'});
     if(dc<=2)out.push({k:'info',t:`${n} cierra ${dc===0?'hoy':dc===1?'mañana':'el '+fechaDia(c.cierre)}: lo que compres después pasa al resumen siguiente`,go:'finanzas',ftab:'tarj'})});
-  {const aj=planFondos();if(aj.length)out.push({k:'warn',t:'Plata de obra y personal mezclada: '+ajTexto(aj[0])[1].charAt(0).toLowerCase()+ajTexto(aj[0])[1].slice(1),go:'finanzas',ftab:'fondos'})}
+  {const aj=planFondos();if(aj.length){const pa=ajTexto(aj[0])[1];out.push({k:'warn',t:'Obra y personal mezclados: '+(pa.find(x=>/^Del efectivo/.test(x))||pa[0]),go:'finanzas',ftab:'fondos'})}}
   S.papeles.forEach(p=>{const e=papelEstado(p);if(e.k!=='ok')out.push({k:e.k==='vencido'?'neg':'warn',t:`${p.nombre}: ${e.t.toLowerCase()}`,go:'papeles'})});
   S.archivos.filter(a=>a.vence).forEach(a=>{const e=papelEstado(a);if(e.k==='ok')return;const veh=a.ref&&a.ref.col==='vehiculos'?S.vehiculos.find(v=>v.id===a.ref.id):null;
     out.push({k:e.k==='vencido'?'neg':'warn',t:`${a.nombre||'Documento'}${veh?' de '+veh.nombre:''}: ${e.t.toLowerCase()}`,go:veh?'auto':'papeles'})});
@@ -1060,6 +1061,8 @@ function evRow(e){
   <button class="rb" data-edit="turno" data-id="${e.id}"><span class="rt">${esc(e.titulo)}</span><span class="rm"><span>${fechaRel(e.fecha)}${e.hora?' · '+esc(e.hora):''}</span>${e.lugar?`<span>${esc(e.lugar)}</span>`:''}${e.tipo?`<span>${esc(e.tipo)}</span>`:''}${exTag(e)}</span></button></li>`;
 }
 function movRow(x){
+  if(x.tipo==='reparto'){const f=(v,mo)=>mo==='USD'?usd0(v):money0(v);return`<li class="row mov"><button class="rb" data-edit="reparto" data-id="${x.id}"><span class="cico" style="--cc:#F59E0B">${ic('swap',16)}</span>
+  <span class="txt"><span class="rt">${esc(x.desc||'Reparto obra / personal')}</span><span class="rm">${(x.cambios||[]).map(c=>`<span>${esc(c.cuenta)}: obra ${+c.obra>0?'+':''}${f(+c.obra,c.moneda)}</span>`).join('')}</span></span><span class="amt muted">${ic('swap',15)}</span></button></li>`}
   if(x.pase)return`<li class="row mov"><button class="rb" data-edit="pase" data-id="${x.id}"><span class="cico" style="--cc:var(--c-plata)">${ic('swap',16)}</span>
   <span class="txt"><span class="rt">${esc(x.desc||(x.ganancia?'Ganancia':'Pase de plata'))}</span><span class="rm"><span>${esc(fondoN(x.fondo))} → ${esc(fondoN(x.fondoDest))}</span><span>${esc(x.cuenta||'')}</span>${x.ganancia?'<span class="tag gan">ganancia</span>':''}</span></span>
   ${(()=>{const sg=!x._v?0:x.tipo==='gasto'?-1:1,v=Math.abs(+x.monto||0);return`<span class="amt ${sg>0?'pos':sg<0?'':'muted'}">${sg>0?'+':sg<0?'−':''}${bigM(v,x.moneda)}</span>`})()}</button></li>`;
@@ -1211,18 +1214,23 @@ function planFondos(){if(!hayObra())return[];const F=fondoSaldos(),out=[];const 
   return out}
 const ajustesFondos=planFondos;
 const esEfe=c=>/efect|mano|cash/i.test(c);
-function ajTexto(pl){const f=pl.mon==='USD'?usd0:money0,donde=c=>esEfe(c)?'el efectivo':c;
-  const prob=pl.problemas.map(x=>x.o<0?`obra usó ${f(-x.o)} de plata personal en ${x.c}`:`usaste ${f(-x.p)} personales que eran de obra en ${x.c}`);
-  const acc=pl.cambios.map(x=>x.delta<0?`en ${donde(x.c)}, pasá ${f(-x.delta)} de obra a personal`:`en ${donde(x.c)}, pasá ${f(x.delta)} de personal a obra`);
-  return[cap(prob.join(' y ')+'.'),cap(acc.join('; ')+'.')]}
+function ajTexto(pl){const u=pl.mon==='USD',f=v=>u?usd0(v):money0(v);
+  const prob=pl.problemas.map(x=>x.o<0?`obra gastó ${f(-x.o)} de ${x.c} que eran tuyos`:`gastaste ${f(-x.p)} ${esEfe(x.c)?'del efectivo':'de '+x.c} que eran de obra`);
+  const deuda=pl.problemas.reduce((s,x)=>s+(x.o<0?-x.o:0)-(x.p<0?-x.p:0),0);
+  const res=deuda>0?`Obra te debe ${f(deuda)}.`:deuda<0?`Le debés ${f(-deuda)} a obra.`:'Quedan a mano.';
+  const pasos=pl.cambios.map(x=>{const O=x.despues.o,P=x.despues.p,T=O+P;
+    if(esEfe(x.c))return P>0&&O>0?`Del efectivo (${f(T)}), agarrá ${f(P)} para vos: los ${f(O)} que quedan son de obra.`:P>0?`Todo el efectivo (${f(T)}) es tuyo.`:`Todo el efectivo (${f(T)}) es de obra.`;
+    return(P>0&&O>0?`En ${x.c} (${f(T)}): ${f(O)} son de obra y ${f(P)} tuyos.`:P>0?`${x.c} queda todo tuyo (${f(T)}).`:`${x.c} queda todo de obra (${f(T)}).`)+' No tenés que pasar nada.'});
+  return[cap(prob.join(' y ')+'. ')+res,pasos]}
 function ajBox(){const L=planFondos();const neg=S.cfg.cuentas.filter(c=>!esTarjeta(c)).map(c=>({c,v:(saldos()[c]||{}).ARS||0})).filter(x=>Math.round(x.v)<0);
-  if(!L.length&&!neg.length)return'';const f=(v,u)=>u?usd0(v):money0(v);
+  if(!L.length&&!neg.length)return'';const fm=(v,u)=>u?usd0(v):money0(v);
   return`<div class="ajbox"><span class="eyebrow">${ic('swap',13)} Para no mezclar</span>
-   ${L.map((pl,i)=>{const[t1,t2]=ajTexto(pl);return`<div class="aj"><p>${esc(t1)}</p><p><b>Para emparejar con un solo ajuste: ${esc(t2.charAt(0).toLowerCase()+t2.slice(1))}</b></p>
-    <div class="ajq"><span class="eyebrow">Cómo queda</span>${pl.cambios.map(x=>`<div class="ajr"><b>${esc(x.c)}</b><span>Obra <s>${f(x.antes.o,pl.mon==='USD')}</s> → <b class="${x.despues.o<0?'neg':''}">${f(x.despues.o,pl.mon==='USD')}</b></span><span>Personal <s>${f(x.antes.p,pl.mon==='USD')}</s> → <b class="${x.despues.p<0?'neg':''}">${f(x.despues.p,pl.mon==='USD')}</b></span></div>`).join('')}</div>
-    <button class="btn sm pri" data-act="ajfondo" data-i="${i}" style="align-self:flex-start">${ic('tick',14)}Ya lo hice, acomodar</button></div>`}).join('')}
+   ${L.map((pl,i)=>{const[t1,pasos]=ajTexto(pl),u=pl.mon==='USD';return`<div class="aj"><p>${esc(t1)}</p>
+    <div class="ajq"><span class="eyebrow">Qué hacer</span>${pasos.map(t=>`<p><b>${esc(t)}</b></p>`).join('')}</div>
+    <div class="ajq"><span class="eyebrow">Cómo queda</span>${pl.cambios.map(x=>`<div class="ajr"><b>${esc(x.c)} · ${fm(x.despues.o+x.despues.p,u)}</b><span>Obra <s>${fm(x.antes.o,u)}</s> → <b>${fm(x.despues.o,u)}</b></span><span>Personal <s>${fm(x.antes.p,u)}</s> → <b>${fm(x.despues.p,u)}</b></span></div>`).join('')}</div>
+    <button class="btn sm pri" data-act="ajfondo" data-i="${i}" style="align-self:flex-start">${ic('tick',14)}Listo, acomodar</button></div>`}).join('')}
    ${neg.map(x=>`<p class="small"><b>${esc(x.c)}</b> da ${money0(x.v)}: no puede quedar en negativo. Revisá el saldo real con <b>Plata › Cuentas › Ajustar</b>.</p>`).join('')}
-   ${L.length?'<p class="tiny muted">No cambia cuánto tenés de obra ni de personal: solo cuánto de cada uno hay en cada cuenta. Si te equivocás, lo deshacés con el botón ↶ de arriba.</p>':''}</div>`}
+   ${L.length?'<p class="tiny muted">Se guarda como un solo movimiento y todo queda en cero, sin negativos. No cambia cuánto tenés de obra ni de personal. Si te equivocás, lo deshacés con ↶ arriba.</p>':''}</div>`}
 function plataBlock(full){const P=plataPorCuenta(),FS=fondoSaldos();
   const row=(r,tj)=>`<li class="prow ${tj?'tj':''}"><span class="pico">${ic(icoCuenta(r.n,tj),17)}</span><span class="pn">${esc(r.n)}${tj?'':splitCta(r.n,FS)}</span><span class="pv">${r.ars||!r.usd?`<b class="${r.ars<0?'neg':''}">${bigM(r.ars)}</b>`:''}${r.usd?`<b class="${r.usd<0?'neg':'usd'}">${bigM(r.usd,'USD')}</b>`:''}</span>${full&&!tj?`<button class="btn sm" data-act="ajustar" data-k="${esc(r.n)}">Ajustar</button>`:''}</li>`;
   const vacio=!P.disp.some(r=>r.ars||r.usd);
@@ -1334,7 +1342,7 @@ function tabFondos(){const F=fondoSaldos(),m=S.mes;const z={ARS:0,USD:0,ing:{ARS
   const P=F[FMIO]||z,O=F[FOBRA]||z;
   const dos=(o)=>`<span class="big-n" style="font-size:clamp(26px,5vw,36px)">${cnt(o.ARS||0)}</span>${Math.round(o.USD||0)?`<span class="muted small">y ${usd0(o.USD)}</span>`:''}`;
   let ci=0,cg=0;movsMesTodos(m).forEach(x=>{if(esPers(x)||(x.moneda||'ARS')!=='ARS')return;if(x.tipo==='ingreso')ci+=+x.monto||0;else if(x.tipo==='gasto')cg+=+x.monto||0});
-  const ms=S.movs.filter(x=>(x.fecha||'').startsWith(m)&&(!esPers(x)||fk(x.fondoDest)===FOBRA)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.creado||0)-(a.creado||0));
+  const ms=S.movs.filter(x=>(x.fecha||'').startsWith(m)&&(x.tipo==='reparto'||!esPers(x)||fk(x.fondoDest)===FOBRA)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.creado||0)-(a.creado||0));
   const tj=Object.entries(O.ctas||{}).filter(([c,v])=>esTarjeta(c)&&Math.round(v.ARS||0)<0).reduce((s,[c,v])=>s-v.ARS,0);
   return`<p class="muted small">Separá la plata de obra de la tuya, aunque esté en la misma cuenta. Cuando cargás un gasto o un ingreso elegís <b>Personal</b> u <b>Obra</b>. Lo de obra no se mezcla con tu resultado del mes.</p>
   <div class="fsplit"><div><span class="eyebrow">${ic('wallet',13)} Personal</span>${dos(P)}</div><div><span class="eyebrow">${ic('home',13)} Obra</span>${dos(O)}</div></div>
@@ -1467,7 +1475,7 @@ V.finanzas=()=>{
       ${S.fopen?`<div class="fpanel">
         ${sel('fper','Período',per,[['mes','Mes elegido ('+mesNombre(m)+')'],['todo','Todo el historial'],['rango','Entre fechas']])}
         ${per==='rango'?`<div class="two">${fld('Desde',`<input class="inp" type="date" id="fdesde" value="${esc(S.fdesde||'')}">`)}${fld('Hasta',`<input class="inp" type="date" id="fhasta" value="${esc(S.fhasta||'')}">`)}</div>`:''}
-        <div class="two">${sel('ftipo','Tipo',S.ftipo,[['','Todos'],['gasto','Gastos'],['ingreso','Ingresos'],['transf','Transferencias y pases'],['ajuste','Ajustes de saldo']])}${sel('ffondo','De quién',ff,[['','Personal y obra'],[FMIO,'Solo personal'],[FOBRA,'Solo obra']])}</div>
+        <div class="two">${sel('ftipo','Tipo',S.ftipo,[['','Todos'],['gasto','Gastos'],['ingreso','Ingresos'],['transf','Transferencias y pases'],['ajuste','Ajustes de saldo'],['reparto','Repartos obra/personal']])}${sel('ffondo','De quién',ff,[['','Personal y obra'],[FMIO,'Solo personal'],[FOBRA,'Solo obra']])}</div>
         <div class="two">${sel('fcat','Categoría',S.fcat||'',[['','Todas'],...cats.map(c=>[c,c])])}${sel('fcta','Cuenta',S.fcta||'',[['','Todas'],...S.cfg.cuentas.map(c=>[c,c])])}</div>
         ${nAct||S.fq?`<button class="btn sm" data-act="flimpiar" style="align-self:flex-start">${ic('x',14)}Limpiar filtros</button>`:''}</div>`:''}
       ${list.length?`<div class="fres"><span><b>${list.length}</b> movimiento${list.length===1?'':'s'}${per==='rango'?' entre esas fechas':todo?' en todo el historial':' en '+mesNombre(m)}</span>${tt.gas?`<span>Gastos <b>${money0(tt.gas)}</b></span>`:''}${tt.ing?`<span>Ingresos <b class="pos">${money0(tt.ing)}</b></span>`:''}</div>`:''}
@@ -1995,6 +2003,7 @@ const FORM={
   <button data-new="factura" style="--sc:var(--c-impuestos)">${ic('receipt',22)}Factura</button><button data-new="fijo" style="--sc:var(--neg)">${ic('rep',22)}Pago fijo</button>
   <button data-new="papel" style="--sc:var(--c-papeles)">${ic('idcard',22)}Vencimiento</button><button data-new="servicio" style="--sc:var(--c-auto)">${ic('car',22)}Service</button>
   <button data-new="clave" style="--sc:var(--c-claves)">${ic('key',22)}Clave</button></div>`,
+ reparto:x=>{const f=(v,mo)=>mo==='USD'?usd0(v):money0(v);return`<h2>Reparto obra / personal</h2><p class="hint">Un solo movimiento que cambió de quién es la plata en cada cuenta, sin mover plata. Si lo borrás, todo vuelve a como estaba.</p><ul class="list">${(x.cambios||[]).map(c=>`<li class="row"><span class="rt" style="flex:1">${esc(c.cuenta)}</span><span class="small">Obra ${+c.obra>0?'+':''}${f(+c.obra,c.moneda)} · Personal ${-c.obra>0?'+':''}${f(-c.obra,c.moneda)}</span></li>`).join('')}</ul><p class="muted small">${fechaDM(x.fecha||HOY())}</p>`},
  deshacer:()=>`<h2>${ic('undo',20)} Deshacer cambios</h2>${UNDO.length?`<p class="hint">Tus últimos cambios en este equipo, del más nuevo al más viejo. Podés deshacer el último o volver hasta cualquiera de la lista.</p><ul class="list">${UNDO.slice().reverse().slice(0,15).map((e,i)=>`<li class="row"><span class="txt" style="flex:1;min-width:0"><span class="rt" style="display:block">${esc(undoTexto(e))}</span><span class="rm"><span>${haceT(e.t)}</span></span></span><button class="btn sm ${i?'':'pri'}" data-act="undon" data-n="${i+1}">${i?'Hasta acá':'Deshacer'}</button></li>`).join('')}</ul>`:'<p class="muted">No hay cambios para deshacer.</p>'}<div class="sacts"><span class="sp"></span><button type="button" class="btn" data-act="close">Cerrar</button></div>`,
  mas:()=>`<h2>Todas las secciones</h2><div class="tiles" style="grid-template-columns:repeat(2,minmax(0,1fr))">${tilesHtml(MAS)}</div>`,
  mov:x=>{const tipo=x.tipo||'gasto';let cats=catsDe(tipo,x.fondo);if(x.categoria&&!cats.includes(x.categoria))cats=[x.categoria,...cats];const enCuota=!!x.cuota;
@@ -2153,7 +2162,7 @@ async function submitSheet(form){
   if(kind==='tarjeta'){const n=v('f-tnom');if(!n)return ferr('Elegí la cuenta de la tarjeta.');const cie=Math.min(31,Math.max(1,parseInt(v('f-tcie'))||1)),ven=Math.min(31,Math.max(1,parseInt(v('f-tven'))||1));
     S.cfg.tarjetas={...S.cfg.tarjetas,[n]:{...(S.cfg.tarjetas[n]||{pagados:{}}),cierre:cie,vence:ven}};closeSheet();if(await putCfg())toast('Tarjeta guardada');render();return}
   if(kind==='cotiz'){const c={...(S.cotiz||{})};DOLARES.forEach(([k])=>{const co=num('f-c-'+k),ve=num('f-v-'+k);if(co>0||ve>0)c[k]={compra:co>0?co:null,venta:ve>0?ve:null}});c.fecha=HOY();c.hora=new Date().toTimeString().slice(0,5);c.fuente='Carga manual';closeSheet();if(await put('cotiz','actual',c))toast('Cotización guardada');return}
-  if(kind==='ajmov'){closeSheet();return}
+  if(kind==='ajmov'||kind==='reparto'){closeSheet();return}
   if(kind==='archivo'){const nombre=v('f-dnom'),ven=v('f-dven')||null,av=+v('f-dav')||30,nota=v('f-dnota');
     if(it){closeSheet();if(await put('archivos',it.id,{...strip(it),nombre:nombre||it.nombre,vence:ven,avisar:av,nota}))toast('Cambios guardados');return}
     const f=(form.querySelector('#f-file').files||[])[0];if(!f)return ferr('Elegí una foto o un PDF.');
@@ -2295,10 +2304,7 @@ function act(a,t){
   else if(a==='hab'){const hb=S.habitos.find(x=>x.id===id),d=t.dataset.d;if(hb&&d&&d<=HOY()){const e=habEst(hb,d),H={...(hb.hechos||{})};if(e==='')H[d]=1;else if(e==='si')H[d]=0;else delete H[d];put('habitos',hb.id,{...strip(hb),hechos:H})}}
   else if(a==='undo')openSheet('deshacer');
   else if(a==='undon'){const n=+t.dataset.n||1;closeSheet();deshacer(n)}
-  else if(a==='ajfondo'){const pl=planFondos()[+t.dataset.i];if(pl)(async()=>{
-      for(const x of pl.cambios){const amt=Math.abs(x.delta);if(!amt)continue;
-        await crearPase({desde:x.delta<0?FOBRA:FMIO,hacia:x.delta<0?FMIO:FOBRA,cuenta:x.c,moneda:pl.mon,monto:amt,desc:'Ajuste para no mezclar'})}
-      toast('Listo: cuentas emparejadas')})()}
+  else if(a==='ajfondo'){const pl=planFondos()[+t.dataset.i];if(pl)put('movs',newId('movs'),{tipo:'reparto',fecha:HOY(),desc:'Reparto obra / personal',cambios:pl.cambios.map(x=>({cuenta:x.c,moneda:pl.mon,obra:x.delta})),creado:Date.now()}).then(ok=>{if(ok)toast('Listo: obra y personal separados')})}
   else if(a==='ffiltros'){S.fopen=!S.fopen;render()}
   else if(a==='flimpiar'){Object.assign(S,{fq:'',ftipo:'',ffondo:'',fcat:'',fcta:'',fper:'mes',fdesde:'',fhasta:'',flim:10});render()}
   else if(a==='fmas'){S.flim=(S.flim||10)+10;render()}
@@ -2339,7 +2345,7 @@ function act(a,t){
     const {kind,it,preset}=S.sheet;closeSheet();
     if(kind==='clave'){if(!VK)return;VI=(VI||[]).filter(x=>x.id!==it.id);render();vSave().then(ok=>ok&&toast('Clave borrada'));return}
     if(kind==='tarjeta'){const tj={...S.cfg.tarjetas};delete tj[preset.nombre];S.cfg.tarjetas=tj;putCfg().then(()=>{toast('Tarjeta quitada');render()});return}
-    if(kind==='mov'||kind==='ajmov'||kind==='pase'){const bk=strip(it),fj=it.fijo?S.fijos.find(f=>f.id===it.fijo):null;
+    if(kind==='mov'||kind==='ajmov'||kind==='pase'||kind==='reparto'){const bk=strip(it),fj=it.fijo?S.fijos.find(f=>f.id===it.fijo):null;
       del('movs',it.id).then(async()=>{let ymFj=null;
         if(fj){ymFj=Object.keys(fj.pagados||{}).find(k=>fj.pagados[k]===it.id)||null;if(ymFj){const b=strip(fj);const pg={...(fj.pagados||{})};delete pg[ymFj];b.pagados=pg;await put('fijos',fj.id,b)}}
         toast('Movimiento borrado',{label:'Deshacer',fn:async()=>{await put('movs',it.id,bk);if(fj&&ymFj){const f2=S.fijos.find(f=>f.id===fj.id);if(f2){const b=strip(f2);b.pagados={...(f2.pagados||{}),[ymFj]:it.id};await put('fijos',f2.id,b)}}toast('Listo, el movimiento volvió')}})});return}
