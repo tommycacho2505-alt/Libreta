@@ -524,6 +524,13 @@ select.inp{max-width:100%;text-overflow:ellipsis}
 .ajr s{opacity:.6}
 .aj{flex-direction:column;align-items:stretch}
 
+/* Reglas obra */
+.reglas{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:14px;background:var(--sunk)}
+.reglas .eyebrow{display:inline-flex;align-items:center;gap:6px}
+.reglas .chip{cursor:pointer;gap:5px}
+.reglas .chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.reglas p{margin:0}
+
 /* Movimientos: filtros */
 .fpanel{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:var(--sunk)}
 .fres{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted)}
@@ -888,6 +895,8 @@ const FOBRA='obra';
 const fk=id=>(!id||id===FMIO)?FMIO:FOBRA;
 const esPers=x=>fk(x.fondo)===FMIO;
 const fondoN=id=>fk(id)===FMIO?'Personal':'Obra';
+const ctasSoloPers=()=>{const C=S.cfg.cuentas.filter(c=>!esTarjeta(c));return Array.isArray(S.cfg.soloPersonal)?S.cfg.soloPersonal.filter(c=>C.includes(c)):C.filter(c=>/mercado ?pago|\bmp\b/i.test(c))};
+const cuentaObra=()=>{const C=S.cfg.cuentas.filter(c=>!esTarjeta(c)),sp=ctasSoloPers();if(S.cfg.cuentaObra&&C.includes(S.cfg.cuentaObra)&&!sp.includes(S.cfg.cuentaObra))return S.cfg.cuentaObra;return C.find(c=>/efect|mano|cash/i.test(c)&&!sp.includes(c))||C.find(c=>!sp.includes(c))||''};
 const hayObra=()=>S.movs.some(x=>!esPers(x)||fk(x.fondoDest)===FOBRA);
 const CAT_OBRA={gasto:['Materiales','Mano de obra','Subcontratos','Fletes','Herramientas','Honorarios','Otros'],ingreso:['Cobro de cliente','Anticipo','Certificado','Otros']};
 const catsDe=(tipo,f)=>fk(f)===FMIO?(tipo==='ingreso'?S.cfg.catIngreso:S.cfg.catGasto):CAT_OBRA[tipo==='ingreso'?'ingreso':'gasto'];
@@ -907,6 +916,10 @@ function fondoSaldos(){const o={};const g=f=>o[f]||(o[f]={ARS:0,USD:0,ing:{ARS:0
     const f=fk(x.fondo),mo=x.moneda||'ARS',m=+x.monto||0;g(f).n++;
     if(x.tipo==='transf'){const f2=x.fondoDest?fk(x.fondoDest):f;if(f2!==f)g(f2).n++;add(f,x.cuenta||'Sin cuenta',mo,-m);add(f2,x.destino||'Sin cuenta',x.monedaDest||mo,+(x.montoDest||m))}
     else{add(f,x.cuenta||'Sin cuenta',mo,x.tipo==='gasto'?-m:m);if(x.tipo==='ingreso')g(f).ing[mo]+=m;else if(x.tipo==='gasto')g(f).gas[mo]+=m}});
+  // En las cuentas solo personales obra queda siempre en 0: lo que obra pagó o cobró por ahí se cuenta en la cuenta de obra (efectivo)
+  const dst=cuentaObra();o._auto=[];
+  if(dst)for(const c of ctasSoloPers())for(const mon of ['ARS','USD']){const v=((((o[FOBRA]||{}).ctas||{})[c])||{})[mon]||0;if(!Math.round(v*100))continue;
+    add(FOBRA,c,mon,-v);add(FMIO,c,mon,v);add(FOBRA,dst,mon,v);add(FMIO,dst,mon,-v);o._auto.push({c,mon,v,dst})}
   return o}
 const fondoSeg=(sel,name)=>{const f=fk(sel);return`<div class="seg fseg"><label><input type="radio" name="${name}" value="${FMIO}" ${f===FMIO?'checked':''}><span>${ic('wallet',15)}Personal</span></label><label><input type="radio" name="${name}" value="${FOBRA}" ${f===FOBRA?'checked':''}><span>${ic('home',15)}Obra</span></label></div>`};
 const segVal=(root,name)=>((root||document).querySelector(`[name=${name}]:checked`)||{}).value||FMIO;
@@ -1017,7 +1030,8 @@ function avisos(){
   Object.keys(S.cfg.tarjetas).forEach(n=>{const c=ciclo(n);const dc=diasHasta(c.cierre),dv=diasHasta(c.venceAnt);
     if(!c.pagadoAnt&&c.anterior.ars+c.anterior.usd>0&&dv<=3)out.push({k:dv<0?'neg':'warn',t:`${n}: el resumen de ${money0(c.anterior.ars)}${c.anterior.usd?' + '+usd0(c.anterior.usd):''} ${dv<0?'venció':dv===0?'vence hoy':'vence el '+fechaDia(c.venceAnt)}`,go:'finanzas',ftab:'tarj'});
     if(dc<=2)out.push({k:'info',t:`${n} cierra ${dc===0?'hoy':dc===1?'mañana':'el '+fechaDia(c.cierre)}: lo que compres después pasa al resumen siguiente`,go:'finanzas',ftab:'tarj'})});
-  {const aj=planFondos();if(aj.length){const pa=ajTexto(aj[0])[1];out.push({k:'warn',t:'Obra y personal mezclados: '+(pa.find(x=>/^Del efectivo/.test(x))||pa[0]),go:'finanzas',ftab:'fondos'})}}
+  {const rs=retirosSug();if(rs.length)out.push({k:'warn',t:`Sacá ${rs[0].mon==='USD'?usd0(rs[0].monto):money0(rs[0].monto)} de ${rs[0].src} a ${rs[0].dst.toLowerCase()} para emparejar obra`,go:'finanzas',ftab:'fondos'})}
+  {const aj=planFondos().filter(pl=>!retirosSug().some(r=>r.mon===pl.mon));if(aj.length){const pa=ajTexto(aj[0])[1];out.push({k:'warn',t:'Obra y personal mezclados: '+(pa.find(x=>/^Del efectivo/.test(x))||pa[0]),go:'finanzas',ftab:'fondos'})}}
   S.papeles.forEach(p=>{const e=papelEstado(p);if(e.k!=='ok')out.push({k:e.k==='vencido'?'neg':'warn',t:`${p.nombre}: ${e.t.toLowerCase()}`,go:'papeles'})});
   S.archivos.filter(a=>a.vence).forEach(a=>{const e=papelEstado(a);if(e.k==='ok')return;const veh=a.ref&&a.ref.col==='vehiculos'?S.vehiculos.find(v=>v.id===a.ref.id):null;
     out.push({k:e.k==='vencido'?'neg':'warn',t:`${a.nombre||'Documento'}${veh?' de '+veh.nombre:''}: ${e.t.toLowerCase()}`,go:veh?'auto':'papeles'})});
@@ -1199,7 +1213,7 @@ function splitCta(n,F){if(!hayObra())return'';const o=((F[FOBRA]||{}).ctas||{})[
     return`${bar}<span class="psl"><span class="so ${a<0?'neg':''}">Obra ${f(a)}</span><span class="sp2 ${b<0?'neg':''}">Personal ${f(b)}</span></span>`};
   return`<span class="psplit">${oa||pa&&!ou?fila(oa,pa,false):''}${ou?fila(ou,pu,true):''}</span>`}
 /* Si obra gastó plata personal de una cuenta (o al revés), propone el ajuste con la plata que sí tiene en otra cuenta */
-function planFondos(){if(!hayObra())return[];const F=fondoSaldos(),out=[];const ctas=S.cfg.cuentas.filter(c=>!esTarjeta(c));
+function planFondos(){if(!hayObra())return[];const F=fondoSaldos(),out=[];const sp=ctasSoloPers(),ctas=S.cfg.cuentas.filter(c=>!esTarjeta(c)&&!sp.includes(c));
   for(const mon of ['ARS','USD']){const g=(f,c)=>Math.round((((F[f]||{}).ctas||{})[c]||{})[mon]||0);
     const O={},P={};ctas.forEach(c=>{O[c]=g(FOBRA,c);P[c]=g(FMIO,c)});
     const O0={...O},P0={...P},flag=ctas.some(c=>(O[c]<0&&P[c]>0)||(P[c]<0&&O[c]>0));if(!flag)continue;
@@ -1222,13 +1236,19 @@ function ajTexto(pl){const u=pl.mon==='USD',f=v=>u?usd0(v):money0(v);
     if(esEfe(x.c))return P>0&&O>0?`Del efectivo (${f(T)}), agarrá ${f(P)} para vos: los ${f(O)} que quedan son de obra.`:P>0?`Todo el efectivo (${f(T)}) es tuyo.`:`Todo el efectivo (${f(T)}) es de obra.`;
     return(P>0&&O>0?`En ${x.c} (${f(T)}): ${f(O)} son de obra y ${f(P)} tuyos.`:P>0?`${x.c} queda todo tuyo (${f(T)}).`:`${x.c} queda todo de obra (${f(T)}).`)+' No tenés que pasar nada.'});
   return[cap(prob.join(' y ')+'. ')+res,pasos]}
-function ajBox(){const L=planFondos();const neg=S.cfg.cuentas.filter(c=>!esTarjeta(c)).map(c=>({c,v:(saldos()[c]||{}).ARS||0})).filter(x=>Math.round(x.v)<0);
-  if(!L.length&&!neg.length)return'';const fm=(v,u)=>u?usd0(v):money0(v);
+function retirosSug(){if(!hayObra())return[];const F=fondoSaldos(),dst=cuentaObra(),sp=ctasSoloPers(),out=[];if(!dst)return out;
+  for(const mon of ['ARS','USD']){const P=Math.round(((((F[FMIO]||{}).ctas||{})[dst])||{})[mon]||0);if(P>=0)continue;
+    const C=S.cfg.cuentas.filter(c=>!esTarjeta(c)&&c!==dst);const src=C.map(c=>({c,v:Math.round(((((F[FMIO]||{}).ctas||{})[c])||{})[mon]||0),sp:sp.includes(c)})).filter(x=>x.v>0).sort((a,b)=>(b.sp-a.sp)||b.v-a.v)[0];
+    if(src){const O=Math.round(((((F[FOBRA]||{}).ctas||{})[dst])||{})[mon]||0);out.push({mon,dst,src:src.c,monto:Math.min(-P,src.v),O,T:O+P})}}
+  return out}
+function ajBox(){const R=retirosSug();const L0=planFondos();const neg=S.cfg.cuentas.filter(c=>!esTarjeta(c)).map(c=>({c,v:(saldos()[c]||{}).ARS||0})).filter(x=>Math.round(x.v)<0);
+  const L=L0.filter(pl=>!R.some(r=>r.mon===pl.mon));if(!L.length&&!neg.length&&!R.length)return'';const fm=(v,u)=>u?usd0(v):money0(v);
   return`<div class="ajbox"><span class="eyebrow">${ic('swap',13)} Para no mezclar</span>
    ${L.map((pl,i)=>{const[t1,pasos]=ajTexto(pl),u=pl.mon==='USD';return`<div class="aj"><p>${esc(t1)}</p>
     <div class="ajq"><span class="eyebrow">Qué hacer</span>${pasos.map(t=>`<p><b>${esc(t)}</b></p>`).join('')}</div>
     <div class="ajq"><span class="eyebrow">Cómo queda</span>${pl.cambios.map(x=>`<div class="ajr"><b>${esc(x.c)} · ${fm(x.despues.o+x.despues.p,u)}</b><span>Obra <s>${fm(x.antes.o,u)}</s> → <b>${fm(x.despues.o,u)}</b></span><span>Personal <s>${fm(x.antes.p,u)}</s> → <b>${fm(x.despues.p,u)}</b></span></div>`).join('')}</div>
     <button class="btn sm pri" data-act="ajfondo" data-i="${i}" style="align-self:flex-start">${ic('tick',14)}Listo, acomodar</button></div>`}).join('')}
+   ${R.map((r,i)=>{const f=r.mon==='USD'?usd0:money0;return`<div class="aj"><p>En ${esc(r.dst.toLowerCase())} hay ${f(r.T)}, pero ${f(r.O)} son de obra: usaste ${f(r.monto)} de obra en cosas personales.</p><div class="ajq"><span class="eyebrow">Qué hacer</span><p><b>Sacá ${f(r.monto)} de ${esc(r.src)} y sumalos al ${esc(r.dst.toLowerCase())} para devolvérselos a obra.</b></p></div><button class="btn sm pri" data-act="ajretiro" data-i="${i}" style="align-self:flex-start">${ic('tick',14)}Ya lo saqué</button></div>`}).join('')}
    ${neg.map(x=>`<p class="small"><b>${esc(x.c)}</b> da ${money0(x.v)}: no puede quedar en negativo. Revisá el saldo real con <b>Plata › Cuentas › Ajustar</b>.</p>`).join('')}
    ${L.length?'<p class="tiny muted">Se guarda como un solo movimiento y todo queda en cero, sin negativos. No cambia cuánto tenés de obra ni de personal. Si te equivocás, lo deshacés con ↶ arriba.</p>':''}</div>`}
 function plataBlock(full){const P=plataPorCuenta(),FS=fondoSaldos();
@@ -1345,6 +1365,11 @@ function tabFondos(){const F=fondoSaldos(),m=S.mes;const z={ARS:0,USD:0,ing:{ARS
   const ms=S.movs.filter(x=>(x.fecha||'').startsWith(m)&&(x.tipo==='reparto'||!esPers(x)||fk(x.fondoDest)===FOBRA)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.creado||0)-(a.creado||0));
   const tj=Object.entries(O.ctas||{}).filter(([c,v])=>esTarjeta(c)&&Math.round(v.ARS||0)<0).reduce((s,[c,v])=>s-v.ARS,0);
   return`<p class="muted small">Separá la plata de obra de la tuya, aunque esté en la misma cuenta. Cuando cargás un gasto o un ingreso elegís <b>Personal</b> u <b>Obra</b>. Lo de obra no se mezcla con tu resultado del mes.</p>
+  ${(()=>{const sp=ctasSoloPers(),dst=cuentaObra(),au=(F._auto||[]).filter(a=>a.mon==='ARS');const C=S.cfg.cuentas.filter(c=>!esTarjeta(c));
+    return`<div class="reglas"><span class="eyebrow">${ic('gear',13)} Reglas</span>
+     <p class="small">Cuentas solo personales (obra siempre en $ 0):</p><div class="chips">${C.map(c=>`<button type="button" class="chip ${sp.includes(c)?'on':''}" data-act="solopers" data-k="${esc(c)}">${sp.includes(c)?ic('tick',13):''}${esc(c)}</button>`).join('')}</div>
+     <label class="fld"><span>La plata de obra se guarda en</span><select class="inp" id="f-ctaobra">${C.filter(c=>!sp.includes(c)).map(c=>`<option ${c===dst?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+     ${sp.length&&dst?`<p class="tiny muted">Lo que obra paga o cobra por ${esc(sp.join(' o '))} se descuenta o se suma a la plata de obra en ${esc(dst.toLowerCase())}, sin que tengas que hacer nada.${au.length?' Ahora: '+au.map(a=>`${a.v<0?'obra pagó '+money0(-a.v):'obra cobró '+money0(a.v)} por ${a.c}`).join(', ')+'.':''}</p>`:''}</div>`})()}
   <div class="fsplit"><div><span class="eyebrow">${ic('wallet',13)} Personal</span>${dos(P)}</div><div><span class="eyebrow">${ic('home',13)} Obra</span>${dos(O)}</div></div>
   <p class="tiny muted">Cada uno ya tiene descontado lo que debe en tarjetas${tj?` (obra debe ${money0(tj)} en tarjeta)`:''}. Personal + obra = lo que hay en tus cuentas menos las tarjetas sin pagar.</p>
   ${ajBox()}
@@ -2304,6 +2329,8 @@ function act(a,t){
   else if(a==='hab'){const hb=S.habitos.find(x=>x.id===id),d=t.dataset.d;if(hb&&d&&d<=HOY()){const e=habEst(hb,d),H={...(hb.hechos||{})};if(e==='')H[d]=1;else if(e==='si')H[d]=0;else delete H[d];put('habitos',hb.id,{...strip(hb),hechos:H})}}
   else if(a==='undo')openSheet('deshacer');
   else if(a==='undon'){const n=+t.dataset.n||1;closeSheet();deshacer(n)}
+  else if(a==='ajretiro'){const r=retirosSug()[+t.dataset.i];if(r)crearMov({tipo:'transf',monto:r.monto,moneda:r.mon,cuenta:r.src,destino:r.dst,monedaDest:r.mon,fecha:HOY(),desc:'Retiro para '+r.dst.toLowerCase()}).then(ok=>{if(ok!==false)toast('Listo: transferencia cargada')})}
+  else if(a==='solopers'){const sp=ctasSoloPers(),c=t.dataset.k;S.cfg.soloPersonal=sp.includes(c)?sp.filter(x=>x!==c):[...sp,c];putCfg().then(()=>render())}
   else if(a==='ajfondo'){const pl=planFondos()[+t.dataset.i];if(pl)put('movs',newId('movs'),{tipo:'reparto',fecha:HOY(),desc:'Reparto obra / personal',cambios:pl.cambios.map(x=>({cuenta:x.c,moneda:pl.mon,obra:x.delta})),creado:Date.now()}).then(ok=>{if(ok)toast('Listo: obra y personal separados')})}
   else if(a==='ffiltros'){S.fopen=!S.fopen;render()}
   else if(a==='flimpiar'){Object.assign(S,{fq:'',ftipo:'',ffondo:'',fcat:'',fcta:'',fper:'mes',fdesde:'',fhasta:'',flim:10});render()}
@@ -2400,6 +2427,7 @@ document.addEventListener('change',e=>{const t=e.target,id=t.id;
   else if(id==='f-frec')fijoSync();
   else if(id==='f-hfrec')habSync();
   else if(id==='f-pde'||id==='f-pa')paseSync();
+  else if(id==='f-ctaobra'){S.cfg.cuentaObra=t.value;putCfg().then(()=>render())}
   else if(id==='ffondo'){S.ffondo=t.value;S.flim=10;render()}
   else if(id==='f-alic'||t.name==='f-ftipo')calcIVA();
   else if(id.startsWith('ai-cat-')&&S.ai){const ac=S.ai.acciones[+t.dataset.i];if(ac&&t.value){ac.otras=[ac.categoria,...(ac.otras||[])].filter(c=>c!==t.value).slice(0,2);ac.categoria=t.value;renderAI()}}
