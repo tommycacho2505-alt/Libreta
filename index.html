@@ -531,6 +531,11 @@ select.inp{max-width:100%;text-overflow:ellipsis}
 .reglas .chip.on{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
 .reglas p{margin:0}
 
+/* Ojo del recuadro azul */
+.hojo-w{position:absolute;top:14px;right:14px;z-index:2}
+.hero .toolbar .hojo{margin-left:auto}
+.hero .hojo{color:#fff;background:rgba(255,255,255,.14)}
+
 /* Movimientos: filtros */
 .fpanel{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:var(--sunk)}
 .fres{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted)}
@@ -684,7 +689,6 @@ img{max-width:100%}
         <span class="sync idle" id="sync"><i></i><span>Conectando…</span></span>
         <button class="iconbtn" data-act="undo" id="b-undo" aria-label="Deshacer" title="Deshacer" hidden></button>
         <button class="iconbtn vozb" data-act="voz" id="b-voz" aria-label="Cargar hablando"></button>
-        <button class="iconbtn" data-act="ojo" id="b-ojo" aria-label="Ocultar montos"></button>
         <button class="iconbtn" data-act="tema" id="b-tema" aria-label="Cambiar tema"></button>
       </header>
       <section class="view" id="view"></section>
@@ -721,18 +725,20 @@ const diasHasta=s=>Math.round((parseD(s)-parseD(HOY()))/864e5);
 const nf=new Intl.NumberFormat('es-AR',{maximumFractionDigits:2});
 const nf0=new Intl.NumberFormat('es-AR',{maximumFractionDigits:0});
 let OCULTO=false;try{OCULTO=localStorage.getItem('libreta-oculto')==='1'}catch(e){}
-const MASK='***';
-const money=(n,mon)=>((mon||'ARS')==='USD'?'US$ ':'$ ')+(OCULTO?MASK:nf.format(Math.round((+n||0)*100)/100));
-const money0=n=>OCULTO?'$ '+MASK:(n<0?'− ':'')+'$ '+nf0.format(Math.abs(Math.round(+n||0)));
-const usd0=n=>OCULTO?'US$ '+MASK:(n<0?'− ':'')+'US$ '+nf0.format(Math.abs(Math.round(+n||0)));
+const MASK='***';let ENMASK=false;
+function mascara(fn){ENMASK=true;try{return fn()}finally{ENMASK=false}}
+const ojoBtn=()=>`<button class="iconbtn hojo" data-act="ojo" aria-label="${OCULTO?'Mostrar montos':'Ocultar montos'}" title="${OCULTO?'Mostrar montos':'Ocultar montos'}">${ic(OCULTO?'eyeoff':'eye',18)}</button>`;
+const money=(n,mon)=>((mon||'ARS')==='USD'?'US$ ':'$ ')+((OCULTO&&ENMASK)?MASK:nf.format(Math.round((+n||0)*100)/100));
+const money0=n=>(OCULTO&&ENMASK)?'$ '+MASK:(n<0?'− ':'')+'$ '+nf0.format(Math.abs(Math.round(+n||0)));
+const usd0=n=>(OCULTO&&ENMASK)?'US$ '+MASK:(n<0?'− ':'')+'US$ '+nf0.format(Math.abs(Math.round(+n||0)));
 const cpt=new Intl.NumberFormat('es-AR',{notation:'compact',maximumFractionDigits:1});
-const compact=n=>'$ '+(OCULTO?MASK:cpt.format(n));
-const bigM=(n,mon)=>{if(OCULTO)return'<span class="cur">'+(mon==='USD'?'US$':'$')+'</span>'+MASK;n=Math.round(+n||0);return(n<0?'−':'')+'<span class="cur">'+(mon==='USD'?'US$':'$')+'</span>'+nf0.format(Math.abs(n))};
+const compact=n=>'$ '+((OCULTO&&ENMASK)?MASK:cpt.format(n));
+const bigM=(n,mon)=>{if(OCULTO&&ENMASK)return'<span class="cur">'+(mon==='USD'?'US$':'$')+'</span>'+MASK;n=Math.round(+n||0);return(n<0?'−':'')+'<span class="cur">'+(mon==='USD'?'US$':'$')+'</span>'+nf0.format(Math.abs(n))};
 const cnt=(n,mon)=>`<span data-count="${Math.round(+n||0)}" data-mon="${mon||''}">${bigM(n,mon)}</span>`;
 const reduced=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return true}};
 const SC={inicio:'var(--c-plata)',finanzas:'var(--c-plata)',resumen:'var(--c-plata)',tareas:'var(--c-tareas)',agenda:'var(--c-agenda)',notas:'var(--c-notas)',impuestos:'var(--c-impuestos)',papeles:'var(--c-papeles)',auto:'var(--c-auto)',claves:'var(--c-claves)',ajustes:'var(--c-ajustes)'};
-function countUp(root){if(typeof requestAnimationFrame!=='function'||OCULTO)return;root.querySelectorAll('[data-count]').forEach(el=>{const to=+el.dataset.count,mon=el.dataset.mon||'';if(!to)return;const t0=performance.now(),dur=900;
-  const fin=()=>{if(el.isConnected)el.innerHTML=bigM(to,mon)};
+function countUp(root){if(typeof requestAnimationFrame!=='function')return;root.querySelectorAll('[data-count]').forEach(el=>{if(OCULTO&&el.closest('.hero'))return;const to=+el.dataset.count,mon=el.dataset.mon||'';if(!to)return;const t0=performance.now(),dur=900;
+  const fin=()=>{if(el.isConnected&&!(OCULTO&&el.closest('.hero')))el.innerHTML=bigM(to,mon)};
   const step=t=>{if(!el.isConnected)return;const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,4);el.innerHTML=bigM(to*e,mon);if(k<1)requestAnimationFrame(step)};
   requestAnimationFrame(step);setTimeout(fin,dur+150)})}
 function parseMonto(s){s=String(s??'').trim().replace(/[^\d.,]/g,'');if(!s)return NaN;
@@ -1302,14 +1308,14 @@ V.inicio=()=>{
   return`${exBanner()}
   <div class="hello"><span class="eyebrow">${fechaLarga(h)}</span><h2>${sal}, Cach</h2></div>
   <div class="home-top">
-   <section class="hero">${PLAN}
+   ${mascara(()=>`<section class="hero">${PLAN}<span class="hojo-w">${ojoBtn()}</span>
     <div class="stack"><span class="eyebrow">Saldo ${hayObra()?'personal ':''}de ${mesNombre(m)}</span><span class="disp hn">${cnt(t.saldo)}</span></div>
     <div class="hrow"><span>${ic('arrowup',15)}Ingresos <b class="disp">${cnt(t.ing)}</b></span><span>${ic('arrowdn',15)}Gastos <b class="disp">${cnt(t.gas)}</b></span>${hasUSD?`<span>Dólares <b class="disp">${cnt(tu.saldo,'USD')}</b></span>`:''}</div>
     ${L.svg}
     <div class="hfoot"><span>${varPct==null?'Gasto acumulado del mes':`<span class="hchip">${varPct>0?'+':''}${varPct}%</span>&nbsp; gasto vs. mismo día de ${mesNombre(L.prev)}`}</span><span>${L.proy>0&&L.dd<L.n?'Cerrarías el mes en '+compact(L.proy):''}</span></div>
     <div class="cota" aria-hidden="true"><i style="width:${(d/n*100).toFixed(1)}%"></i></div>
     <div class="hfoot"><span>Día ${d} de ${n}</span><span>${n-d===0?'Último día del mes':`Quedan ${n-d} días`}</span></div>
-   </section>
+   </section>`)}
    <div class="side">${cmdBar()}
     ${av.length?`<div class="alerts">${av.slice(0,6).map(a=>`<button class="alert ${a.k}" data-go="${a.go}" ${a.ftab?`data-ftab="${a.ftab}"`:''}><span class="b">${ic(aic[a.k],15)}</span><span class="t">${esc(a.t)}</span>${ic('right',16)}</button>`).join('')}</div>`:`<div class="card"><p class="muted">Todo en orden: no hay nada vencido ni por vencer.</p></div>`}
     <div class="card" style="--sc:var(--c-plata)"><header class="ch"><h3><span class="ico">${ic('wallet',16)}</span>Tu plata</h3><a href="#finanzas" class="lnk" data-go="finanzas" data-ftab="ctas">Cuentas${ic('right',14)}</a></header>${plataBlock(false)}</div>
@@ -1447,12 +1453,12 @@ V.resumen=()=>{
   const flow=(l,a,b,mon)=>{const d=b-a;return`<span>${l}</span><span class="muted small">${bigM(a,mon)} <span class="arrow">→</span> <b>${bigM(b,mon)}</b></span><span class="dl ${d>0?'inc':d<0?'up':''}">${d>0?'+':d<0?'−':''}${mon==='USD'?usd0(Math.abs(d)):money0(Math.abs(d))}</span>`};
   const conc=conclusiones(D);
   return`${exBanner()}
-  <section class="hero">${PLAN}<div class="toolbar">${monthbar('rmes')}</div>
+  ${mascara(()=>`<section class="hero">${PLAN}<div class="toolbar">${monthbar('rmes')}${ojoBtn()}</div>
    <div class="stack"><span class="eyebrow">${D.enCurso?'Resultado del mes en curso':'Resultado de '+mesNombre(m)}</span><span class="disp hn" style="font-size:clamp(40px,10vw,64px)">${cnt(D.t.saldo)}</span></div>
    <div class="hrow"><span>${ic('arrowup',15)}Ingresos <b class="disp">${cnt(D.t.ing)}</b></span><span>${ic('arrowdn',15)}Gastos <b class="disp">${cnt(D.t.gas)}</b></span></div>
    <div class="hrow">${tasa!=null?`<span class="hchip">Te quedó el ${tasa}%</span>`:''}${dg!=null?`<span class="hchip">${dg>0?'+':''}${dg}% de gasto vs. ${pm}</span>`:''}${D.enCurso?`<span class="hchip">Datos hasta hoy</span>`:''}</div>
    ${L.svg}${LW.svg}<div class="hfoot"><span>Gasto acumulado · la punteada es ${pm}</span>${D.enCurso&&L.proy>0?`<span>Cerrarías en ${compact(L.proy)}</span>`:''}</div>
-  </section>
+  </section>`)}
   ${conc.length?`<div class="ins"><ul>${conc.map(c=>`<li class="${c.k}"><span class="b">${ic(c.i,15)}</span><span>${esc(c.t)}</span></li>`).join('')}</ul></div>`:`<div class="card"><p class="muted">No hay movimientos cargados en ${mesNombre(m)}.</p></div>`}
   <div class="kpis">${kpi('Gasto promedio por día',bigM(D.t.gas/Math.max(1,D.dias)))}${kpi('Movimientos cargados',D.nMov)}${D.fijos.length?kpi('Pagos fijos pagados',`${D.fijosOk}/${D.fijos.length}`,D.fijosOk===D.fijos.length?'pos':''):''}${D.cuotas?kpi('Pagado en cuotas',D.cuotas>=1e6?compact(D.cuotas):bigM(D.cuotas)):''}${S.cfg.fiscal.regimen==='mono'||D.facturado?kpi('Facturado',D.facturado>=1e6?compact(D.facturado):bigM(D.facturado)):''}${kpi('Tareas hechas',D.hechas)}${D.turnos?kpi('Turnos',D.turnos):''}</div>
   <div class="grid2">
@@ -1521,10 +1527,10 @@ V.finanzas=()=>{
     body=`<p class="muted small">Si es débito automático tocá <b>Se debitó</b> cuando lo veas en el banco; si no, <b>Pagar</b>. En los dos casos el gasto se carga solo. Los pagos anuales (seguro, patente anual) aparecen solo en su mes.</p>${fijosList(m,false)}`;
   }else body=tabCuentas(m);
   const L=lineMes(m,320,86,'lc-n'),LW=lineMes(m,900,150,'lc-w');
-  return`${exBanner()}<section class="hero">${PLAN}<div class="toolbar">${monthbar('mes')}</div>
+  return`${exBanner()}${mascara(()=>`<section class="hero">${PLAN}<div class="toolbar">${monthbar('mes')}${ojoBtn()}</div>
   <div class="stack"><span class="eyebrow">Saldo ${hayObra()?'personal ':''}de ${mesNombre(m)}</span><span class="disp hn" style="font-size:clamp(40px,10vw,64px)">${cnt(t.saldo)}</span></div>
   <div class="hrow"><span>${ic('arrowup',15)}Ingresos <b class="disp">${cnt(t.ing)}</b></span><span>${ic('arrowdn',15)}Gastos <b class="disp">${cnt(t.gas)}</b></span>${hasUSD?`<span>Dólares <b class="disp">${cnt(tu.saldo,'USD')}</b></span>`:''}</div>
-  ${L.svg}${LW.svg}<div class="hfoot"><span>Gasto acumulado · la punteada es ${mesNombre(L.prev)}</span>${L.proy>0&&L.dd<L.n?`<span>Cerrarías en ${compact(L.proy)}</span>`:''}</div></section>
+  ${L.svg}${LW.svg}<div class="hfoot"><span>Gasto acumulado · la punteada es ${mesNombre(L.prev)}</span>${L.proy>0&&L.dd<L.n?`<span>Cerrarías en ${compact(L.proy)}</span>`:''}</div></section>`)}
   <div class="seg" role="tablist">${tabs.map(([k,l])=>`<button role="tab" class="${S.ftab===k?'on':''}" aria-selected="${S.ftab===k}" data-act="ftab" data-k="${k}">${l}</button>`).join('')}</div>
   <article class="card">${body}</article>`;
 };
