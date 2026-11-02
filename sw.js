@@ -1,5 +1,5 @@
 // Libreta: guarda la app en el equipo para que abra sin internet.
-const VERSION='libreta-2026-11-02b';
+const VERSION='libreta-2026-11-02c';
 const BASE=['./','./index.html','./config.js','./manifest.webmanifest?v=2','./icon-v2-192.png','./icon-v2-512.png','./icon-v2-maskable.png','./apple-touch-icon-v2.png','./favicon-v2-32.png'];
 const EXTERNOS=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(VERSION);await c.addAll(BASE);
@@ -14,3 +14,9 @@ self.addEventListener('fetch',e=>{
   if(['cdn.jsdelivr.net','fonts.googleapis.com','fonts.gstatic.com'].includes(u.hostname)){ // librerías y fuentes: lo guardado primero
     e.respondWith(caches.match(r).then(x=>x||fetch(r).then(res=>{const cp=res.clone();caches.open(VERSION).then(c=>c.put(r,cp));return res})))}
 });
+
+// Avisos (notificaciones push)
+self.addEventListener('push',e=>{let d={};try{d=e.data.json()}catch(x){d={title:'Libreta',body:e.data?e.data.text():''}}
+  e.waitUntil(self.registration.showNotification(d.title||'Libreta',{body:d.body||'',tag:d.tag||undefined,icon:'icon-v2-192.png',badge:'icon-v2-192.png',data:{url:d.url||'./'}}))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const url=(e.notification.data&&e.notification.data.url)||'./';
+  e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if('focus' in c)return c.focus()}return clients.openWindow(url)}))});

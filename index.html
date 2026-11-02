@@ -966,7 +966,7 @@ function fijoEstado(f,m){
   const d=fijoDue(f,m),h=HOY();
   if(d<h)return{k:'vencido',t:(f.debito?'Débito del ':'Venció ')+fechaCorta(d),d};
   const diff=diasHasta(d);
-  return{k:diff<=3?'pronto':'pendiente',t:(f.debito?'Débito ':'Vence ')+(diff===0?'hoy':diff===1?'mañana':'el '+parseD(d).getDate()),d,diff};
+  return{k:diff<=(f.avisar==null?3:Math.max(+f.avisar,0))?'pronto':'pendiente',t:(f.debito?'Débito ':'Vence ')+(diff===0?'hoy':diff===1?'mañana':'el '+parseD(d).getDate()),d,diff};
 }
 const mensualEq=f=>{const v=+f.monto||0;return f.frecuencia==='anual'?v/12:v};
 const esSusc=f=>f.categoria==='Suscripciones';
@@ -1102,7 +1102,7 @@ function fijosList(m,short,filtro,nuevo){
   if(!fs.length)return emptyB(filtro?'No tenés pagos impositivos cargados para este mes. Agregá la cuota del monotributo, IVA, ganancias o ingresos brutos con su día de vencimiento.':'Cargá lo que pagás todos los meses (alquiler, luz, internet, prepaga, monotributo…) y acá vas a ver qué falta pagar o debitarse.','Agregar pago fijo','fijo',nuevo);
   let pendARS=0;
   const rows=fs.map(f=>{const e=fijoEstado(f,m);if(e.k!=='pagado'&&(f.moneda||'ARS')==='ARS')pendARS+=+f.monto||0;
-    return`<li class="row fij"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span><span>día ${esc(f.dia)}${f.frecuencia==='anual'?' · anual':''}</span>${f.debito?'<span>débito automático</span>':''}${exTag(f)}</span></button>
+    return`<li class="row fij"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span><span>día ${esc(f.dia)}${f.frecuencia==='anual'?' · anual':''}</span>${f.debito?`<span>débito automático${f.auto!==false?' · se carga solo':''}</span>`:''}${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${exTag(f)}</span></button>
     <span class="acts"><span class="pill ${e.k}">${e.t}</span>${e.k==='pagado'?`<button class="btn sm" data-act="despagar" data-id="${f.id}" data-m="${m}">Deshacer</button>`:`<button class="btn sm ${f.debito?'':'pri'}" data-act="pagar" data-id="${f.id}" data-m="${m}">${f.debito?'Se debitó':'Pagar'}</button>`}</span></li>`}).join('');
   return`<ul class="list">${rows}</ul><div class="foot"><span>Falta en ${mesNombre(m)}</span><span class="num">${money(pendARS)}</span></div>${short?'':`<div><button class="btn sm" data-new="fijo" ${nuevo||''}>${ic('plus',15)}Agregar pago fijo</button></div>`}`;
 }
@@ -1526,7 +1526,7 @@ V.finanzas=()=>{
       <input class="inp" id="pp-${i}" data-cat="${esc(c)}" inputmode="decimal" placeholder="Sin tope" value="${b?nf.format(b):''}" aria-label="Tope para ${esc(c)}">
       ${b?`<div class="bar"><i class="${pct>1?'over':pct>.8?'warn':'ok'}" style="width:${Math.min(pct,1)*100}%"></i></div>`:''}</div>`}).join('')}</div>`;
   }else if(S.ftab==='fijos'){
-    body=`<p class="muted small">Si es débito automático tocá <b>Se debitó</b> cuando lo veas en el banco; si no, <b>Pagar</b>. En los dos casos el gasto se carga solo. Los pagos anuales (seguro, patente anual) aparecen solo en su mes.</p>${fijosList(m,false)}`;
+    body=`${window.LIBRETA_PUSH&&S.notif!=='activo'?`<div class="banner"><span>${ic('alert',15)} Activá las notificaciones para que te avise antes de cada pago.</span><button class="btn sm pri" data-go="ajustes">Activar</button></div>`:''}<p class="muted small">Los débitos automáticos se cargan solos en movimientos el día que vencen (podés apagarlo en cada uno). Los que no son débito los marcás con <b>Pagar</b>. Los pagos anuales (seguro, patente anual) aparecen solo en su mes.</p>${fijosList(m,false)}`;
   }else body=tabCuentas(m);
   const L=lineMes(m,320,86,'lc-n'),LW=lineMes(m,900,150,'lc-w');
   return`${exBanner()}${mascara(()=>`<section class="hero">${PLAN}<div class="toolbar">${monthbar('mes')}${ojoBtn()}</div>
@@ -1709,6 +1709,13 @@ V.claves=()=>{
    <label class="fld"><span>Repetila</span><input class="inp" type="password" id="v-n2" autocomplete="new-password"></label><p class="ferr" id="v-err2" hidden></p><button class="btn" type="submit" style="align-self:flex-start">Cambiar</button></form></details>
   <p class="tiny muted">Para las claves más sensibles (banco, mail principal) conviene además un gestor dedicado con autocompletado, como Bitwarden.</p>`;
 };
+function notifCard(){const P=window.LIBRETA_PUSH;
+  if(!P)return`<article class="card set"><header class="ch"><h3>${ic('alert',16)} Notificaciones</h3></header><p class="muted small">Los avisos al teléfono funcionan en tu web instalada en la pantalla de inicio. Activalos desde ahí, en Ajustes.</p></article>`;
+  if(S.notif===undefined){S.notif='…';P.estado().then(v=>{S.notif=v;render()}).catch(()=>{S.notif='nosoportado';render()})}
+  const st=S.notif,txt={activo:'Activadas en este equipo. Te llegan a las 9 de la mañana: unos días antes de cada pago fijo (según lo que elegiste en cada uno), el día del vencimiento y antes de que venzan tus papeles.',inactivo:'Todavía no están activadas en este equipo.',bloqueado:'Están bloqueadas para esta web. Habilitalas en los ajustes del teléfono (Notificaciones › Libreta) y volvé a tocar Activar.',nosoportado:'Este navegador no permite notificaciones. En iPhone, abrí la Libreta desde el ícono de la pantalla de inicio (iOS 16.4 o más nuevo).','…':'Revisando…'}[st]||'';
+  return`<article class="card set"><header class="ch"><h3>${ic('alert',16)} Notificaciones</h3><span class="pill ${st==='activo'?'pagado':'pendiente'}">${st==='activo'?'Activas':'Apagadas'}</span></header><p class="small">${txt}</p>
+   <div class="toolbar">${st!=='activo'&&st!=='nosoportado'?`<button class="btn sm pri" data-act="notifon">Activar en este equipo</button>`:''}${st==='activo'?`<button class="btn sm" data-act="notifprueba">Mandar una prueba</button><button class="btn sm" data-act="notifahora">Avisarme lo de hoy</button><button class="btn sm" data-act="notifoff">Apagar</button>`:''}</div>
+   <p class="tiny muted">Activalas en cada equipo donde las quieras: teléfono, compu, etc.</p></article>`}
 V.ajustes=()=>{
   const ed=(k,t,d)=>`<article class="card set"><header class="ch"><h3>${t}</h3></header><p class="muted small">${d}</p>
    <div class="chips">${S.cfg[k].map(v=>`<span class="chip">${esc(v)}<button class="x" data-act="rmchip" data-k="${k}" data-v="${esc(v)}" aria-label="Quitar ${esc(v)}">${ic('x',13)}</button></span>`).join('')}</div>
@@ -1716,6 +1723,7 @@ V.ajustes=()=>{
   const F=S.cfg.fiscal;
   return`<div class="grid2">
   <article class="card set"><header class="ch"><h3>Apariencia</h3></header><div class="seg">${[['auto','Automático'],['light','Claro'],['dark','Oscuro']].map(([k,l])=>`<button class="${tema===k?'on':''}" data-act="setema" data-k="${k}">${l}</button>`).join('')}</div><p class="muted small">Automático sigue el modo de tu teléfono o compu. Cada dispositivo recuerda su elección.</p></article>
+  ${notifCard()}
   <article class="card set"><header class="ch"><h3>Datos fiscales</h3></header>
    <div class="two"><label class="fld"><span>Categoría de monotributo</span><select class="inp" id="cf-cat">${tabla().map(x=>`<option ${x.c===F.categoria?'selected':''}>${x.c}</option>`).join('')}</select></label>
    <label class="fld"><span>Actividad</span><select class="inp" id="cf-act"><option value="serv" ${F.actividad!=='bien'?'selected':''}>Servicios</option><option value="bien" ${F.actividad==='bien'?'selected':''}>Venta de bienes</option></select></label></div>
@@ -2010,6 +2018,7 @@ function render(){
   const mas=$('#n-mas');if(mas)mas.classList.toggle('on',MAS.includes(S.view));
   $('#vt').textContent=S.view==='inicio'?'Libreta':TITLES[S.view];
   const loading=S.booting||(db&&S.loaded.size<COLS.length);
+  if(!loading&&db&&S.autoDia!==HOY()){S.autoDia=HOY();setTimeout(()=>autoDebitos().catch(()=>{}),700)}
   let html=loading?loadingView():V[S.view]();
   if(!loading&&!owner)html=`<div class="banner err">Esta libreta es privada: solo su dueño ve y edita los datos.</div>`+html;
   if(!loading&&!db)html=`<div class="banner err"><span>No hay conexión con la nube. Lo que cargues ahora no se guarda. Revisá la conexión y volvé a abrir la libreta.</span></div>`+html;
@@ -2099,8 +2108,10 @@ const FORM={
   <div class="two">${fld('Monto aproximado',`<input class="inp big" id="f-monto" inputmode="decimal" value="${x.monto?nf.format(x.monto):''}">`)}${fld('Moneda',`<select class="inp" id="f-mon">${opts(['ARS','USD'],x.moneda||'ARS')}</select>`)}</div>
   <div class="two">${fld('Se repite',`<select class="inp" id="f-frec"><option value="mensual">Todos los meses</option><option value="anual" ${x.frecuencia==='anual'?'selected':''}>Una vez por año</option></select>`)}${fld('En el mes',`<select class="inp" id="f-mes">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${+(x.mes||(+HOY().slice(5,7)))===i+1?'selected':''}>${cap(mesNombre('2026-'+pad(i+1)))}</option>`).join('')}</select>`,'f-mes-w')}</div>
   <div class="two">${fld('Vence el día',`<input class="inp" type="number" min="1" max="31" id="f-dia" value="${esc(x.dia||10)}">`)}${fld('Categoría',`<select class="inp" id="f-cat">${opts(S.cfg.catGasto,x.categoria||'Servicios')}</select>`)}</div>
-  ${fld('Se paga con',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta)}</select>`)}
-  <label class="ckl"><input type="checkbox" id="f-deb" ${x.debito?'checked':''}> Débito automático</label>`,
+  <div class="two">${fld('Se paga con',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta)}</select>`)}${fld('Avisarme',`<select class="inp" id="f-avisar">${[[0,'El mismo día'],[1,'1 día antes'],[2,'2 días antes'],[3,'3 días antes'],[5,'5 días antes'],[7,'1 semana antes']].map(([v,l])=>`<option value="${v}" ${(x.avisar==null?3:+x.avisar)===v?'selected':''}>${l}</option>`).join('')}</select>`)}</div>
+  <label class="ckl"><input type="checkbox" id="f-deb" ${x.debito?'checked':''}> Débito automático</label>
+  <label class="ckl" id="f-auto-w"><input type="checkbox" id="f-auto" ${x.auto===false?'':'checked'}> Cargarlo solo en movimientos el día del débito</label>
+  <p class="hint" id="f-auto-h">El día que vence se suma a tus gastos y se descuenta de la cuenta elegida, sin que hagas nada. Si no es débito, lo cargás vos con <b>Pagar</b>.</p>`,
  factura:x=>{const ri=S.cfg.fiscal.regimen==='ri';const tipo=x.tipo||'emitida';return`<h2>${x.id?'Editar factura':'Nueva factura'}</h2>
   ${ri?`<div class="seg"><label><input type="radio" name="f-ftipo" id="f-ft-e" value="emitida" ${tipo!=='recibida'?'checked':''}><span>Emitida (venta)</span></label><label><input type="radio" name="f-ftipo" id="f-ft-r" value="recibida" ${tipo==='recibida'?'checked':''}><span>Recibida (compra)</span></label></div>`:''}
   <div class="two">${fld('Fecha',`<input class="inp" type="date" id="f-fecha" value="${esc(x.fecha||HOY())}">`)}${fld('Número (opcional)',`<input class="inp" id="f-num" value="${esc(x.numero||'')}" placeholder="00001-00000123">`)}</div>
@@ -2180,7 +2191,7 @@ function convCalc(){const w=$('#f-conv-w');if(!w||w.hidden)return;const tc=parse
   if(!(tc>0&&m>0))return;const r=mo==='USD'&&md==='ARS'?m*tc:mo==='ARS'&&md==='USD'?m/tc:m;$('#f-mdest').value=nf.format(Math.round(r*100)/100)}
 function habSync(){const f=$('#f-hfrec');if(!f)return;const a=$('#f-hdias-w'),b=$('#f-hcada-w');if(a)a.hidden=f.value!=='dias';if(b)b.hidden=f.value!=='cada'}
 function paseSync(){const de=$('#f-pde'),pa=$('#f-pa');if(!de||!pa)return;const ok=pa.value===FMIO&&de.value!==FMIO;['f-pgan-w','f-pgan-h'].forEach(i=>{const e=$('#'+i);if(e)e.hidden=!ok})}
-function fijoSync(){const f=$('#f-frec'),w=$('#f-mes-w');if(f&&w)w.hidden=f.value!=='anual'}
+function fijoSync(){const d=$('#f-deb');['f-auto-w','f-auto-h'].forEach(i=>{const e=$('#'+i);if(e&&d)e.hidden=!d.checked});const f=$('#f-frec'),w=$('#f-mes-w');if(f&&w)w.hidden=f.value!=='anual'}
 async function submitSheet(form){
   const {kind,it}=S.sheet;
   const v=id=>{const e=form.querySelector('#'+id);return e?String(e.value).trim():''};
@@ -2241,7 +2252,7 @@ async function submitSheet(form){
   else if(kind==='turno'){if(!v('f-titulo'))return ferr('Poné qué es el turno.');if(!v('f-fecha'))return ferr('Elegí la fecha.');
     data={...base,titulo:v('f-titulo'),fecha:v('f-fecha'),hora:v('f-hora'),lugar:v('f-lugar'),tipo:v('f-tipo'),nota:v('f-nota')}}
   else if(kind==='fijo'){if(!v('f-nombre'))return ferr('Poné un nombre.');const monto=num('f-monto');const dia=Math.min(31,Math.max(1,parseInt(v('f-dia'))||1));
-    data={...base,nombre:v('f-nombre'),monto:monto>0?monto:0,moneda:v('f-mon'),dia,frecuencia:v('f-frec'),mes:+v('f-mes')||null,categoria:v('f-cat'),cuenta:v('f-cta'),debito:form.querySelector('#f-deb').checked,pagados:base.pagados||{}}}
+    data={...base,nombre:v('f-nombre'),monto:monto>0?monto:0,moneda:v('f-mon'),dia,frecuencia:v('f-frec'),mes:+v('f-mes')||null,categoria:v('f-cat'),cuenta:v('f-cta'),debito:form.querySelector('#f-deb').checked,avisar:+v('f-avisar'),auto:!!form.querySelector('#f-auto')?.checked,pagados:base.pagados||{}}}
   else if(kind==='factura'){
     const ri=S.cfg.fiscal.regimen==='ri';const tipo=ri?((form.querySelector('[name=f-ftipo]:checked')||{}).value||'emitida'):(base.tipo||'emitida');
     let neto,iva,total,alic=0;
@@ -2268,6 +2279,14 @@ async function submitSheet(form){
 }
 
 /* ---------- acciones ---------- */
+async function autoDebitos(){const h=HOY(),m=h.slice(0,7),hechos=[];
+  for(const f0 of S.fijos.slice()){if(!f0.debito||f0.auto===false)continue;
+    for(const ym of [addM(m,-1),m]){const f=S.fijos.find(x=>x.id===f0.id)||f0;if(!fijoAplica(f,ym)||(f.pagados||{})[ym])continue;
+      const due=fijoDue(f,ym);if(due>h)continue;if(f.creado&&ymd(new Date(f.creado))>due)continue;
+      const id='auto-'+f.id+'-'+ym;
+      if(!S.movs.some(x=>x.id===id)){const ok=await put('movs',id,{tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha:due,desc:f.nombre,fijo:f.id,auto:true,creado:Date.now()});if(!ok)continue}
+      const b=strip(f);b.pagados={...(f.pagados||{}),[ym]:id};if(await put('fijos',f.id,b))hechos.push(f)}}
+  if(hechos.length)toast(hechos.length===1?`Se cargó el débito de ${hechos[0].nombre}: ${money(hechos[0].monto,hechos[0].moneda)}${hechos[0].cuenta?' de '+hechos[0].cuenta:''}`:`Se cargaron ${hechos.length} débitos automáticos`)}
 async function pagar(f,m){
   const id=newId('movs');const due=fijoDue(f,m),h=HOY();
   const fecha=m!==h.slice(0,7)?due:(f.debito&&due<=h?due:h);
@@ -2328,6 +2347,8 @@ function act(a,t){
   else if(a==='calday'){S.calDia=t.dataset.d;render()}
   else if(a==='regimen'){S.cfg.fiscal={...S.cfg.fiscal,regimen:k};putCfg();render()}
   else if(a==='cuotafijo'){const me=monoEstado();const fid=newId('fijos');put('fijos',fid,{nombre:'Monotributo',monto:me.cuota,moneda:'ARS',dia:20,frecuencia:'mensual',categoria:S.cfg.catGasto.includes('Impuestos')?'Impuestos':'Otros',cuenta:S.cfg.cuentas.includes('Banco')?'Banco':S.cfg.cuentas[0],debito:true,pagados:{},creado:Date.now()}).then(ok=>ok&&toast('Cuota agregada: te avisa antes del 20'))}
+  else if(a==='notifon'||a==='notifoff'){const P=window.LIBRETA_PUSH;if(P)(a==='notifon'?P.activar():P.desactivar()).then(v=>{S.notif=v;render();toast(v==='activo'?'Notificaciones activadas':v==='bloqueado'?'Quedaron bloqueadas: habilitalas en el teléfono':'Notificaciones apagadas')}).catch(()=>toast('No se pudo. Revisá la conexión y probá de nuevo.'))}
+  else if(a==='notifprueba'||a==='notifahora'){const P=window.LIBRETA_PUSH;if(P)P.probar(a==='notifahora'?'ahora':'prueba').then(r=>toast(r&&r.error?'No se pudo mandar el aviso.':a==='notifahora'&&!r.avisos?'Hoy no hay nada para avisar':'Aviso enviado: te tiene que llegar en unos segundos')).catch(()=>toast('No se pudo. Revisá la conexión.'))}
   else if(a==='pagar'||a==='despagar'){const f=S.fijos.find(y=>y.id===id);if(f)(a==='pagar'?pagar:despagar)(f,t.dataset.m)}
   else if(a==='newtarj')openSheet('tarjeta',null,{});
   else if(a==='edtarj')openSheet('tarjeta',null,{nombre:k,...S.cfg.tarjetas[k]});
@@ -2434,7 +2455,7 @@ document.addEventListener('change',e=>{const t=e.target,id=t.id;
   else if(t.name==='f-fondo'){const sel=$('#f-cat'),tp=(document.querySelector('[name=f-tipo]:checked')||{}).value||'gasto';if(sel&&tp!=='transf')sel.innerHTML=opts(catsDe(tp,t.value))}
   else if(id==='f-cuotas')movSync();
   else if(id==='f-mon'||id==='f-mondest'){movSync();convCalc()}
-  else if(id==='f-frec')fijoSync();
+  else if(id==='f-frec'||id==='f-deb')fijoSync();
   else if(id==='f-hfrec')habSync();
   else if(id==='f-pde'||id==='f-pa')paseSync();
   else if(id==='f-ctaobra'){S.cfg.cuentaObra=t.value;putCfg().then(()=>render())}
@@ -2563,6 +2584,18 @@ function aiSite(){if(!SB||!CFG.supabaseUrl)return null;return{async json(prompt,
   catch(e){throw{code:e&&e.name==='AbortError'?'cancelled':'red'}}
   let j=null;try{j=await r.json()}catch(e){}
   if(!r.ok||!j||j.error)throw{code:(j&&j.error)||('http_'+r.status)};return j}}}
+const VAPID_PUB='BKqd-MHrqPutvnKKFu61jQ6VwUpwivCxFUF53ODlWwKHaM5C4SGw43wMeY-vUrNCaS-2H2vEAxYugkM7YAGJvlw';
+function b64u(x){const p='='.repeat((4-x.length%4)%4);const b=atob((x+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+window.LIBRETA_PUSH={
+  async estado(){if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return'nosoportado';if(Notification.permission==='denied')return'bloqueado';
+    const r=await navigator.serviceWorker.ready;const sub=await r.pushManager.getSubscription();return sub?'activo':'inactivo'},
+  async activar(){if(!('Notification' in window)||!('serviceWorker' in navigator))return'nosoportado';const p=await Notification.requestPermission();if(p!=='granted')return'bloqueado';
+    const r=await navigator.serviceWorker.ready;let sub=await r.pushManager.getSubscription();if(!sub)sub=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+    const j=sub.toJSON();const{error}=await SB.from('push_subs').upsert({endpoint:j.endpoint,user_id:UID,sub:j,equipo:navigator.userAgent.slice(0,140)});if(error)throw error;return'activo'},
+  async desactivar(){const r=await navigator.serviceWorker.ready;const sub=await r.pushManager.getSubscription();if(sub){try{await SB.from('push_subs').delete().eq('endpoint',sub.endpoint)}catch(e){}await sub.unsubscribe()}return'inactivo'},
+  async probar(modo){const r0=await SB.auth.getSession();const tk=r0&&r0.data&&r0.data.session&&r0.data.session.access_token;if(!tk)throw new Error('auth');
+    const r=await fetch(CFG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/libreta-avisos',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tk,apikey:CFG.supabaseKey},body:JSON.stringify({modo:modo||'prueba'})});return r.json()}
+};
 const sbUrls={};
 function filesFromSB(){if(!SB)return null;const B=()=>SB.storage.from('documentos');return{store:'sb',
   async upload(blob,type,ext){const key=UID+'/'+rid()+'.'+(ext||'bin');const{error}=await B().upload(key,blob,{contentType:type,upsert:false,cacheControl:'3600'});
