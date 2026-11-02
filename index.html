@@ -829,7 +829,7 @@ const NAVIC={inicio:'home',finanzas:'wallet',resumen:'chart',tareas:'check',agen
 const MAS=['resumen','agenda','notas','impuestos','papeles','auto','claves','ajustes'];
 const DOLARES=[['oficial','Oficial'],['blue','Blue'],['mep','MEP'],['ccl','CCL'],['tarjeta','Tarjeta']];
 const REPS={'':'No se repite',diaria:'Todos los días',semanal:'Todas las semanas',mensual:'Todos los meses',anual:'Todos los años'};
-const S={habitos:[],ffondo:'',fper:'mes',fdesde:'',fhasta:'',fcat:'',fcta:'',flim:10,fopen:false,movs:[],tareas:[],notas:[],turnos:[],fijos:[],facturas:[],papeles:[],vehiculos:[],servicios:[],cfg:{...DEF},cotiz:null,view:'inicio',
+const S={habitos:[],ffondo:'',fper:'todo',fdesde:'',fhasta:'',fcat:'',fcta:'',flim:10,fopen:false,movs:[],tareas:[],notas:[],turnos:[],fijos:[],facturas:[],papeles:[],vehiculos:[],servicios:[],cfg:{...DEF},cotiz:null,view:'inicio',
   rmes:null,mes:HOY().slice(0,7),calMes:HOY().slice(0,7),calDia:HOY(),imes:HOY().slice(0,7),ftab:'movs',fq:'',ftipo:'',tf:'hoy',tl:'',nq:'',vq:'',
   booting:true,loaded:new Set(),sheet:null,vdoc:null,vloaded:false,vshow:{},ai:null};
 let db=null,dl=null,smp=null,owner=true,pend=0,syncErr=false,FILES=null;S.anim=true;
@@ -1485,10 +1485,11 @@ V.finanzas=()=>{
   const tabs=[['movs','Movimientos'],['fondos','Personal y obra'],['tarj','Tarjetas'],['fijos','Pagos fijos'],['susc','Suscripciones'],['pres','Topes'],['ctas','Cuentas']];
   let body='';
   if(S.ftab==='movs'){
-    const q=sinAc(S.fq),qn=q.replace(/[.\s$]/g,''),ff=S.ffondo,per=S.fper||'mes';
-    const todo=per==='todo'||per==='rango'||!!q;const base=todo?S.movs.slice():movsMesTodos(m);
+    const q=sinAc(S.fq),qn=q.replace(/[.\s$]/g,''),ff=S.ffondo,per=S.fper||'todo';
+    const todo=per==='todo'||per==='rango'||!!q,hoyF=HOY();const nFut=per==='todo'&&!S.ffut?S.movs.filter(x=>(x.fecha||'')>hoyF).length:0;const base=todo?S.movs.slice():movsMesTodos(m);
     const list=base.filter(x=>{const f=x.fecha||'';
       if(per==='rango'&&((S.fdesde&&f<S.fdesde)||(S.fhasta&&f>S.fhasta)))return false;
+      if(per==='todo'&&!S.ffut&&f>hoyF)return false;
       if(ff&&!(ff===FMIO?esPers(x)||fk(x.fondoDest)===FMIO:!esPers(x)||fk(x.fondoDest)===FOBRA))return false;
       if(S.ftipo&&x.tipo!==S.ftipo)return false;
       if(S.fcat&&x.categoria!==S.fcat)return false;
@@ -1497,22 +1498,23 @@ V.finanzas=()=>{
       return true}).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.creado||0)-(a.creado||0));
     const lim=S.flim||10,vis=list.slice(0,lim);
     const by={};vis.forEach(x=>(by[x.fecha]=by[x.fecha]||[]).push(x));
-    const nAct=[S.ftipo,ff,S.fcat,S.fcta,per!=='mes'?1:''].filter(Boolean).length;
+    const nAct=[S.ftipo,ff,S.fcat,S.fcta,per!=='todo'?1:''].filter(Boolean).length;
     const tt=tot(list),cats=[...new Set([...S.cfg.catGasto,...S.cfg.catIngreso,...CAT_OBRA.gasto,...CAT_OBRA.ingreso,...S.movs.map(x=>x.categoria).filter(Boolean)])];
     const sel=(id,lab,cur,opts)=>`<label class="fld"><span>${lab}</span><select class="inp" id="${id}">${opts.map(([v,l])=>`<option value="${esc(v)}" ${cur===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
     body=`<p class="hint">Tocá cualquier movimiento para corregir el monto, la fecha o la cuenta, o para borrarlo. Si borrás uno por error, tenés unos segundos para deshacer.</p>
       <div class="toolbar"><input class="inp grow" id="fq" type="search" placeholder="Buscar: super, nafta, 85000, obra, 15 de octubre…" value="${esc(S.fq)}" autocomplete="off" aria-label="Buscar movimientos">
        <button class="btn sm ${S.fopen||nAct?'pri':''}" data-act="ffiltros">${ic('more',15)}Filtros${nAct?` (${nAct})`:''}</button></div>
       ${S.fopen?`<div class="fpanel">
-        ${sel('fper','Período',per,[['mes','Mes elegido ('+mesNombre(m)+')'],['todo','Todo el historial'],['rango','Entre fechas']])}
+        ${sel('fper','Período',per,[['todo','Todo el historial'],['mes','Solo '+mesNombre(m)+' (el mes de arriba)'],['rango','Entre fechas']])}
         ${per==='rango'?`<div class="two">${fld('Desde',`<input class="inp" type="date" id="fdesde" value="${esc(S.fdesde||'')}">`)}${fld('Hasta',`<input class="inp" type="date" id="fhasta" value="${esc(S.fhasta||'')}">`)}</div>`:''}
         <div class="two">${sel('ftipo','Tipo',S.ftipo,[['','Todos'],['gasto','Gastos'],['ingreso','Ingresos'],['transf','Transferencias y pases'],['ajuste','Ajustes de saldo'],['reparto','Repartos obra/personal']])}${sel('ffondo','De quién',ff,[['','Personal y obra'],[FMIO,'Solo personal'],[FOBRA,'Solo obra']])}</div>
         <div class="two">${sel('fcat','Categoría',S.fcat||'',[['','Todas'],...cats.map(c=>[c,c])])}${sel('fcta','Cuenta',S.fcta||'',[['','Todas'],...S.cfg.cuentas.map(c=>[c,c])])}</div>
         ${nAct||S.fq?`<button class="btn sm" data-act="flimpiar" style="align-self:flex-start">${ic('x',14)}Limpiar filtros</button>`:''}</div>`:''}
+      ${nFut?`<p class="hint">Hay ${nFut} movimiento${nFut>1?'s':''} con fecha futura (cuotas que todavía no llegaron). <button class="lnk" data-act="ffut" style="display:inline;padding:0">Mostrarlos</button></p>`:''}${S.ffut&&per==='todo'?`<p class="hint"><button class="lnk" data-act="ffut" style="display:inline;padding:0">Ocultar los de fecha futura</button></p>`:''}
       ${list.length?`<div class="fres"><span><b>${list.length}</b> movimiento${list.length===1?'':'s'}${per==='rango'?' entre esas fechas':todo?' en todo el historial':' en '+mesNombre(m)}</span>${tt.gas?`<span>Gastos <b>${money0(tt.gas)}</b></span>`:''}${tt.ing?`<span>Ingresos <b class="pos">${money0(tt.ing)}</b></span>`:''}</div>`:''}
-      ${vis.length?Object.keys(by).map(d=>{const t2=tot(by[d]);return`<div><div class="dayh"><span>${fechaRel(d)}${todo&&d&&d.slice(0,7)!==HOY().slice(0,7)?' · '+fechaDM(d):''}</span><span class="num">${t2.gas?'− '+money0(t2.gas):''}</span></div><ul class="list">${by[d].map(movRow).join('')}</ul></div>`}).join('')
+      ${vis.length?Object.keys(by).map(d=>{const t2=tot(by[d]);return`<div><div class="dayh"><span>${fechaRel(d)}${d&&d.slice(0,4)!==HOY().slice(0,4)?' '+d.slice(0,4):''}</span><span class="num">${t2.gas?'− '+money0(t2.gas):''}</span></div><ul class="list">${by[d].map(movRow).join('')}</ul></div>`}).join('')
         +(list.length>lim?`<div class="fmore"><button class="btn" data-act="fmas">${ic('down',15)}Ver ${Math.min(10,list.length-lim)} más</button>${list.length-lim>10?`<button class="btn" data-act="ftodos">Ver todos (${list.length})</button>`:''}<span class="muted small">Mostrando ${lim} de ${list.length}</span></div>`:'')
-      :emptyB(S.fq||nAct?'No hay movimientos que coincidan.':'No hay movimientos en '+mesNombre(m)+'.','Cargar movimiento','mov','data-tipo="gasto"')}`;
+      :emptyB(S.fq||nAct?'No hay movimientos que coincidan.':'Todavía no cargaste movimientos.','Cargar movimiento','mov','data-tipo="gasto"')}`;
   }else if(S.ftab==='fondos')body=tabFondos();
   else if(S.ftab==='tarj')body=tabTarjetas();
   else if(S.ftab==='susc')body=tabSusc();
@@ -2338,8 +2340,9 @@ function act(a,t){
   else if(a==='ajretiro'){const r=retirosSug()[+t.dataset.i];if(r)crearMov({tipo:'transf',monto:r.monto,moneda:r.mon,cuenta:r.src,destino:r.dst,monedaDest:r.mon,fecha:HOY(),desc:'Retiro para '+r.dst.toLowerCase()}).then(ok=>{if(ok!==false)toast('Listo: transferencia cargada')})}
   else if(a==='solopers'){const sp=ctasSoloPers(),c=t.dataset.k;S.cfg.soloPersonal=sp.includes(c)?sp.filter(x=>x!==c):[...sp,c];putCfg().then(()=>render())}
   else if(a==='ajfondo'){const pl=planFondos()[+t.dataset.i];if(pl)put('movs',newId('movs'),{tipo:'reparto',fecha:HOY(),desc:'Reparto obra / personal',cambios:pl.cambios.map(x=>({cuenta:x.c,moneda:pl.mon,obra:x.delta})),creado:Date.now()}).then(ok=>{if(ok)toast('Listo: obra y personal separados')})}
+  else if(a==='ffut'){S.ffut=!S.ffut;S.flim=10;render()}
   else if(a==='ffiltros'){S.fopen=!S.fopen;render()}
-  else if(a==='flimpiar'){Object.assign(S,{fq:'',ftipo:'',ffondo:'',fcat:'',fcta:'',fper:'mes',fdesde:'',fhasta:'',flim:10});render()}
+  else if(a==='flimpiar'){Object.assign(S,{fq:'',ftipo:'',ffondo:'',fcat:'',fcta:'',fper:'todo',fdesde:'',fhasta:'',flim:10});render()}
   else if(a==='fmas'){S.flim=(S.flim||10)+10;render()}
   else if(a==='ftodos'){S.flim=100000;render()}
   else if(a==='verfondo'){S.ffondo=id;S.ftab='movs';S.fq='';S.ftipo='';S.flim=10;S.fopen=true;render()}
