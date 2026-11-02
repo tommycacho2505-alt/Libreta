@@ -536,6 +536,8 @@ select.inp{max-width:100%;text-overflow:ellipsis}
 .hero .toolbar .hojo{margin-left:auto}
 .hero .hojo{color:#fff;background:rgba(255,255,255,.14)}
 
+.row.pago .acts{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.row.pago .rb{min-width:0}
 /* Movimientos: filtros */
 .fpanel{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:16px;background:var(--sunk)}
 .fres{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted)}
@@ -1543,12 +1545,23 @@ V.tareas=()=>{
   let list=act.filter(F[S.tf]);
   list=S.tf==='hechas'?list.sort((a,b)=>(b.hechaEl||'').localeCompare(a.hechaEl||'')).slice(0,60):list.sort(byTask);
   const msg={hoy:'Nada pendiente para hoy.',prox:'No tenés tareas con fecha más adelante.',sinf:'No hay tareas sin fecha.',rep:'No tenés tareas que se repitan. Al crear una tarea elegí "Repetir": cuando la marcás hecha, se crea sola la próxima.',todas:'No tenés tareas pendientes.',hechas:'Todavía no completaste ninguna tarea.'};
-  const hechasHoy=S.tareas.filter(x=>x.hecha&&x.hechaEl===h).length,pendHoy=S.tareas.filter(F.hoy).length,vencN=S.tareas.filter(x=>!x.hecha&&x.fecha&&x.fecha<h).length;
+  // Todo lo del día: pagos que vencen (o vencieron), hábitos y turnos
+  const mm=h.slice(0,7),pg=S.fijos.filter(f=>fijoAplica(f,mm)).map(f=>({f,e:fijoEstado(f,mm),d:fijoDue(f,mm)})).sort((a,b)=>a.d.localeCompare(b.d));
+  const pgPend=pg.filter(x=>x.e.k!=='pagado'&&x.d<=h),pgHechos=pg.filter(x=>x.e.k==='pagado'&&x.d===h),pgProx=pg.filter(x=>x.e.k==='pronto'&&x.d>h);
+  const hbs=habsDe(h),hbSi=hbs.filter(x=>habEst(x,h)==='si').length,tnH=S.turnos.filter(x=>x.fecha===h).sort(byEv);
+  const tHechas=S.tareas.filter(x=>x.hecha&&x.hechaEl===h).length,tPend=S.tareas.filter(F.hoy).length;
+  const hechasHoy=tHechas+hbSi+pgHechos.length,pendHoy=tPend+(hbs.length-hbSi)+pgPend.length,vencN=S.tareas.filter(x=>!x.hecha&&x.fecha&&x.fecha<h).length+pgPend.filter(x=>x.d<h).length;
+  const pagoRow=({f,e,d})=>`<li class="row mov pago"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="cico" style="--cc:var(--neg)">${ic('receipt',16)}</span><span class="txt"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span>${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${f.debito?'<span>débito</span>':''}</span></span></button>
+    <span class="acts"><span class="pill ${e.k}">${e.k==='pagado'?e.t:d<h?(f.debito?'Débito del ':'Venció el ')+parseD(d).getDate():d===h?(f.debito?'Se debita hoy':'Vence hoy'):e.t}</span>${e.k==='pagado'?`<button class="btn sm" data-act="despagar" data-id="${f.id}" data-m="${mm}">Deshacer</button>`:d<=h?`<button class="btn sm pri" data-act="pagar" data-id="${f.id}" data-m="${mm}">${f.debito?'Se debitó':'Pagado'}</button>`:''}</span></li>`;
+  const extrasHoy=S.tf!=='hoy'?'':`${pgPend.length||pgHechos.length?`<h4 class="sub" style="--sc:var(--neg)">Pagos de hoy</h4><ul class="list">${[...pgPend,...pgHechos].map(pagoRow).join('')}</ul>`:''}
+   ${hbs.length?`<h4 class="sub" style="--sc:var(--pos)">Hábitos de hoy <span class="muted small" style="font-weight:500">${hbSi} de ${hbs.length}</span></h4><ul class="list">${hbs.map(x=>habRow(x,h)).join('')}</ul>`:''}
+   ${tnH.length?`<h4 class="sub" style="--sc:var(--c-agenda)">Turnos de hoy</h4><ul class="list">${tnH.map(evRow).join('')}</ul>`:''}
+   ${pgProx.length?`<h4 class="sub" style="--sc:var(--warn)">Pagos de los próximos días</h4><ul class="list">${pgProx.map(pagoRow).join('')}</ul>`:''}`;
   const head=`<div class="vhead" style="--sc:var(--c-tareas)">${ringBox(hechasHoy/((hechasHoy+pendHoy)||1),`<b class="disp">${hechasHoy}/${hechasHoy+pendHoy}</b><small>hechas hoy</small>`,'var(--c-tareas)')}<div class="vh-t"><span class="eyebrow">Para hoy</span><span class="disp vh-n">${pendHoy}<small>${pendHoy===1?'pendiente':'pendientes'}</small></span><span class="vh-s">${pendHoy?(vencN?`${vencN} ${vencN===1?'vencida':'vencidas'} de días anteriores`:'Vamos que se puede'):'Estás al día'}</span></div></div>`;
   return`${exBanner()}${head}<form class="qadd" data-form="qt"><input class="inp" id="qt" placeholder="${S.tf==='hoy'?'Nueva tarea para hoy…':'Nueva tarea…'}" autocomplete="off" aria-label="Nueva tarea"><button class="btn pri" type="submit">Agregar</button></form>
-  <div class="toolbar"><div class="chips">${chips.map(([k,l])=>`<button class="chip ${S.tf===k?'on':''}" data-act="tf" data-k="${k}">${l} <b>${act.filter(F[k]).length}</b></button>`).join('')}</div>
+  <div class="toolbar"><div class="chips">${chips.map(([k,l])=>`<button class="chip ${S.tf===k?'on':''}" data-act="tf" data-k="${k}">${l} <b>${k==='hoy'?act.filter(F.hoy).length+(hbs.length-hbSi)+pgPend.length:act.filter(F[k]).length}</b></button>`).join('')}</div>
   <select class="inp" id="tl" style="width:auto;margin-left:auto" aria-label="Lista"><option value="">Todas las listas</option>${S.cfg.listas.map(l=>`<option ${S.tl===l?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
-  <article class="card">${list.length?`<ul class="list">${list.map(taskRow).join('')}</ul>`:emptyB(msg[S.tf],'Tarea con fecha y detalle','tarea')}</article>`;
+  <article class="card">${S.tf==='hoy'&&(pgPend.length||pgHechos.length||hbs.length||tnH.length||pgProx.length)?`<h4 class="sub">Tareas</h4>`:''}${list.length?`<ul class="list">${list.map(taskRow).join('')}</ul>`:S.tf==='hoy'&&extrasHoy.trim()?`<p class="muted small">No tenés tareas para hoy.</p>`:emptyB(msg[S.tf],'Tarea con fecha y detalle','tarea')}${extrasHoy}</article>`;
 };
 V.notas=()=>{
   const q=S.nq.toLowerCase();
@@ -2018,7 +2031,7 @@ function render(){
   const mas=$('#n-mas');if(mas)mas.classList.toggle('on',MAS.includes(S.view));
   $('#vt').textContent=S.view==='inicio'?'Libreta':TITLES[S.view];
   const loading=S.booting||(db&&S.loaded.size<COLS.length);
-  if(!loading&&db&&S.autoDia!==HOY()){S.autoDia=HOY();setTimeout(()=>autoDebitos().catch(()=>{}),700)}
+  if(!loading&&db){const sig=HOY()+'|'+S.fijos.map(f=>f.id+(f.debito?1:0)+(f.auto===false?0:1)+f.dia+Object.keys(f.pagados||{}).length).join(',');if(S.autoSig!==sig){S.autoSig=sig;clearTimeout(S.autoT);S.autoT=setTimeout(()=>autoDebitos().catch(()=>{}),700)}}
   let html=loading?loadingView():V[S.view]();
   if(!loading&&!owner)html=`<div class="banner err">Esta libreta es privada: solo su dueño ve y edita los datos.</div>`+html;
   if(!loading&&!db)html=`<div class="banner err"><span>No hay conexión con la nube. Lo que cargues ahora no se guarda. Revisá la conexión y volvé a abrir la libreta.</span></div>`+html;
@@ -2281,13 +2294,13 @@ async function submitSheet(form){
 /* ---------- acciones ---------- */
 async function autoDebitos(){const h=HOY(),m=h.slice(0,7),hechos=[];
   for(const f0 of S.fijos.slice()){if(!f0.debito||f0.auto===false)continue;
-    for(const ym of [addM(m,-1),m]){const f=S.fijos.find(x=>x.id===f0.id)||f0;if(!fijoAplica(f,ym)||(f.pagados||{})[ym])continue;
+    for(const ym of [addM(m,-1),m]){const f=S.fijos.find(x=>x.id===f0.id)||f0;if(!fijoAplica(f,ym)||(f.pagados||{})[ym]||(f.omitidos||{})[ym])continue;
       const due=fijoDue(f,ym);if(due>h)continue;if(f.creado&&ymd(new Date(f.creado))>due)continue;
-      const id='auto-'+f.id+'-'+ym;
+      const id='auto-'+f.id+'-'+ym;S.autoHechos=S.autoHechos||new Set();if(S.autoHechos.has(id))continue;S.autoHechos.add(id);
       if(!S.movs.some(x=>x.id===id)){const ok=await put('movs',id,{tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha:due,desc:f.nombre,fijo:f.id,auto:true,creado:Date.now()});if(!ok)continue}
       const b=strip(f);b.pagados={...(f.pagados||{}),[ym]:id};if(await put('fijos',f.id,b))hechos.push(f)}}
   if(hechos.length)toast(hechos.length===1?`Se cargó el débito de ${hechos[0].nombre}: ${money(hechos[0].monto,hechos[0].moneda)}${hechos[0].cuenta?' de '+hechos[0].cuenta:''}`:`Se cargaron ${hechos.length} débitos automáticos`)}
-async function pagar(f,m){
+async function pagar(f,m){if((f.omitidos||{})[m]){f={...f,omitidos:{...f.omitidos}};delete f.omitidos[m]}
   const id=newId('movs');const due=fijoDue(f,m),h=HOY();
   const fecha=m!==h.slice(0,7)?due:(f.debito&&due<=h?due:h);
   const ok=await put('movs',id,{tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha,desc:f.nombre,fijo:f.id,creado:Date.now()});
@@ -2297,7 +2310,7 @@ async function pagar(f,m){
 }
 async function despagar(f,m){
   const mid=(f.pagados||{})[m];if(mid)await del('movs',mid);
-  const b=strip(f);const p={...(f.pagados||{})};delete p[m];b.pagados=p;await put('fijos',f.id,b);toast('Deshecho');
+  const b=strip(f);const p={...(f.pagados||{})};delete p[m];b.pagados=p;if(f.debito&&f.auto!==false)b.omitidos={...(f.omitidos||{}),[m]:1};await put('fijos',f.id,b);toast(f.debito&&f.auto!==false?'Deshecho. Este mes no se va a volver a cargar solo.':'Deshecho');
 }
 async function pagarTarjeta(n){const c=ciclo(n);const desde=cuentaPago();
   const mid=newId('movs');const ym=c.prev.slice(0,7);
