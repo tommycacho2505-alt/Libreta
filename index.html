@@ -1513,7 +1513,7 @@ V.finanzas=()=>{
       ${nFut?`<p class="hint">Hay ${nFut} movimiento${nFut>1?'s':''} con fecha futura (cuotas que todavía no llegaron). <button class="lnk" data-act="ffut" style="display:inline;padding:0">Mostrarlos</button></p>`:''}${S.ffut&&per==='todo'?`<p class="hint"><button class="lnk" data-act="ffut" style="display:inline;padding:0">Ocultar los de fecha futura</button></p>`:''}
       ${list.length?`<div class="fres"><span><b>${list.length}</b> movimiento${list.length===1?'':'s'}${per==='rango'?' entre esas fechas':todo?' en todo el historial':' en '+mesNombre(m)}</span>${tt.gas?`<span>Gastos <b>${money0(tt.gas)}</b></span>`:''}${tt.ing?`<span>Ingresos <b class="pos">${money0(tt.ing)}</b></span>`:''}</div>`:''}
       ${vis.length?Object.keys(by).map(d=>{const t2=tot(by[d]);return`<div><div class="dayh"><span>${fechaRel(d)}${d&&d.slice(0,4)!==HOY().slice(0,4)?' '+d.slice(0,4):''}</span><span class="num">${t2.gas?'− '+money0(t2.gas):''}</span></div><ul class="list">${by[d].map(movRow).join('')}</ul></div>`}).join('')
-        +(list.length>lim?`<div class="fmore"><button class="btn" data-act="fmas">${ic('down',15)}Ver ${Math.min(10,list.length-lim)} más</button>${list.length-lim>10?`<button class="btn" data-act="ftodos">Ver todos (${list.length})</button>`:''}<span class="muted small">Mostrando ${lim} de ${list.length}</span></div>`:'')
+        +(list.length>lim||lim>10&&list.length>10?`<div class="fmore">${list.length>lim?`<button class="btn" data-act="fmas">${ic('down',15)}Ver ${Math.min(10,list.length-lim)} más</button>${list.length-lim>10?`<button class="btn" data-act="ftodos">Ver todos (${list.length})</button>`:''}`:''}${lim>10?`<button class="btn" data-act="fmenos">${ic('up',15)}Mostrar menos</button>`:''}<span class="muted small">Mostrando ${Math.min(lim,list.length)} de ${list.length}</span></div>`:'')
       :emptyB(S.fq||nAct?'No hay movimientos que coincidan.':'Todavía no cargaste movimientos.','Cargar movimiento','mov','data-tipo="gasto"')}`;
   }else if(S.ftab==='fondos')body=tabFondos();
   else if(S.ftab==='tarj')body=tabTarjetas();
@@ -2345,6 +2345,7 @@ function act(a,t){
   else if(a==='flimpiar'){Object.assign(S,{fq:'',ftipo:'',ffondo:'',fcat:'',fcta:'',fper:'todo',fdesde:'',fhasta:'',flim:10});render()}
   else if(a==='fmas'){S.flim=(S.flim||10)+10;render()}
   else if(a==='ftodos'){S.flim=100000;render()}
+  else if(a==='fmenos'){S.flim=10;render();setTimeout(()=>{const f=$('#fq');if(f)f.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'})},30)}
   else if(a==='verfondo'){S.ffondo=id;S.ftab='movs';S.fq='';S.ftipo='';S.flim=10;S.fopen=true;render()}
 
   else if(a==='dsug'){const i=$('#f-dnom');if(i)i.value=t.dataset.v}
