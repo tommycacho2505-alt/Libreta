@@ -539,6 +539,7 @@ select.inp{max-width:100%;text-overflow:ellipsis}
 .row.pago .acts{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
 .row.pago .rb{min-width:0}
 /* Detalle por categoría */
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;flex:none}
 .legi{cursor:pointer;border-radius:10px;transition:background .15s}
 @media (hover:hover){.legi:hover{background:var(--sunk)}}
 .legend .legi .num{display:inline-flex;align-items:center;gap:4px}
@@ -958,7 +959,18 @@ function habPct(hb,dias){dias=dias||30;let t=0,s=0,d=HOY();if(habToca(hb,d)&&!ha
 const habFrecTxt=hb=>hb.frec==='dias'?((hb.dias||[]).length===7?'Todos los días':[1,2,3,4,5,6,0].filter(i=>(hb.dias||[]).includes(i)).map(i=>DSEM[i]).join(' · ')):hb.frec==='cada'?`Cada ${hb.cada||2} días`:'Todos los días';
 const habsDe=d=>S.habitos.filter(h=>habToca(h,d)).sort((a,b)=>(a.hora||'99').localeCompare(b.hora||'99')||(a.nombre||'').localeCompare(b.nombre||''));
 function tot(list,mon){mon=mon||'ARS';let ing=0,gas=0;list.forEach(x=>{if((x.moneda||'ARS')!==mon)return;if(x.tipo==='ingreso')ing+=+x.monto||0;else if(x.tipo==='gasto')gas+=+x.monto||0});return{ing,gas,saldo:ing-gas}}
-const catColor=c=>{const i=S.cfg.catGasto.indexOf(c);const j=S.cfg.catIngreso.indexOf(c);return'var(--k'+(((i>=0?i:j>=0?j:7)%8)+1)+')'};
+/* Colores de categorías: cada una tiene el suyo y las nuevas toman uno que no esté usado */
+const COL_EX=[['#D9480F','#FF8A5B'],['#1C7ED6','#74C0FC'],['#B08900','#F2CC4D'],['#AE3EC9','#E599F7'],['#087F5B','#63E6BE'],['#9C5B2E','#D9A273'],['#C92A2A','#FF8787'],['#5C940D','#A9E34B'],['#3B5BDB','#91A7FF'],['#E64980','#FCC2D7'],['#0B7285','#99E9F2'],['#862E9C','#D0BFFF']];
+const slotColor=i=>i<7?'var(--k'+(i+1)+')':i<7+COL_EX.length?COL_EX[i-7][isDark()?1:0]:`hsl(${Math.round((i*137.508)%360)} 60% ${isDark()?'68%':'42%'})`;
+const esOtros=c=>/^(otr[oa]s?|resto)$/i.test(String(c||'').trim());
+let colMemo={k:'',m:{}};
+function slotsCat(){const lista=[...S.cfg.catGasto,...S.cfg.catIngreso,...CAT_OBRA.gasto,...CAT_OBRA.ingreso,...S.movs.map(x=>x.categoria).filter(Boolean)];
+  const fijos=S.cfg.colores||{},key=JSON.stringify(fijos)+'|'+lista.join('|');if(colMemo.k===key)return colMemo.m;
+  const m={},usados=new Set();Object.entries(fijos).forEach(([c,i])=>{if(!esOtros(c)){m[c]=+i;usados.add(+i)}});
+  let n=0;for(const c of lista){if(esOtros(c)||c in m)continue;while(usados.has(n))n++;m[c]=n;usados.add(n)}
+  colMemo={k:key,m};return m}
+const catColor=c=>esOtros(c)||!c?'var(--k8)':slotColor(slotsCat()[c]??0);
+function colorLibre(){const m=slotsCat(),usados=new Set(Object.values(m).map(Number));let n=0;while(usados.has(n))n++;return n}
 const esTarjeta=c=>!!S.cfg.tarjetas[c];
 const cuentaPago=()=>S.cfg.cuentas.find(c=>!esTarjeta(c)&&/banco/i.test(c))||S.cfg.cuentas.find(c=>!esTarjeta(c))||S.cfg.cuentas[0];
 /* Dólar */
@@ -1138,7 +1150,7 @@ function donutBlock(m){
   const total=arr.reduce((s,a)=>s+a.v,0);
   if(!total)return emptyB('Todavía no cargaste gastos en '+mesNombre(m)+'.','Cargar gasto','mov','data-tipo="gasto"');
   if(arr.length>7){const rest=arr.slice(6).reduce((s,a)=>s+a.v,0);arr=arr.slice(0,6).concat([{c:'Resto',v:rest,rest:true}])}
-  const r=56,C=2*Math.PI*r;let off=0;const kc=(a,i)=>a.rest?'var(--k8)':'var(--k'+((i%7)+1)+')';
+  const r=56,C=2*Math.PI*r;let off=0;const kc=(a,i)=>a.rest?'var(--k8)':catColor(a.c);
   const segs=arr.map((a,i)=>{const len=a.v/total*C;const s=`<circle class="seg-d" style="animation-delay:${Math.round(off/C*500)}ms" cx="70" cy="70" r="${r}" fill="none" stroke="${kc(a,i)}" stroke-width="14" stroke-dasharray="${Math.max(len-2,0.5)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;off+=len;return s}).join('');
   const P=S.cfg.presupuestos||{};
   const restoCats=Object.keys(g).filter(c=>!arr.some(a=>a.c===c));
@@ -1742,7 +1754,7 @@ function notifCard(){const P=window.LIBRETA_PUSH;
    <p class="tiny muted">Activalas en cada equipo donde las quieras: teléfono, compu, etc.</p></article>`}
 V.ajustes=()=>{
   const ed=(k,t,d)=>`<article class="card set"><header class="ch"><h3>${t}</h3></header><p class="muted small">${d}</p>
-   <div class="chips">${alfa(S.cfg[k]).map(v=>`<span class="chip">${esc(v)}<button class="x" data-act="rmchip" data-k="${k}" data-v="${esc(v)}" aria-label="Quitar ${esc(v)}">${ic('x',13)}</button></span>`).join('')}</div>
+   <div class="chips">${alfa(S.cfg[k]).map(v=>`<span class="chip">${k==="catGasto"||k==="catIngreso"?`<i class="cdot" style="background:${catColor(v)}"></i>`:""}${esc(v)}<button class="x" data-act="rmchip" data-k="${k}" data-v="${esc(v)}" aria-label="Quitar ${esc(v)}">${ic('x',13)}</button></span>`).join('')}</div>
    <form data-form="chip" data-k="${k}"><input class="inp" id="chip-${k}" placeholder="Agregar…" autocomplete="off" aria-label="Agregar a ${t}"><button class="btn" type="submit">Agregar</button></form></article>`;
   const F=S.cfg.fiscal;
   return`<div class="grid2">
@@ -2507,7 +2519,7 @@ document.addEventListener('submit',async e=>{e.preventDefault();const f=e.target
   else if(k==='aiq'){const tx=$('#ai-t').value.trim();if(!tx){dictar(true);return}correrAI(tx)}
   else if(k==='qt'){const i=$('#qt');const titulo=i.value.trim();if(!titulo)return;
     const id=newId('tareas');put('tareas',id,{titulo,fecha:S.tf==='hoy'?HOY():'',hora:'',lista:S.tl||'',prio:'normal',repetir:'',nota:'',hecha:false,hechaEl:null,creado:Date.now()});i.value='';i.focus()}
-  else if(k==='chip'){const ck=f.dataset.k;const i=f.querySelector('input');const v=i.value.trim();if(v&&!S.cfg[ck].includes(v)){S.cfg[ck]=[...S.cfg[ck],v];putCfg();render()}}
+  else if(k==='chip'){const ck=f.dataset.k;const i=f.querySelector('input');const v=i.value.trim();if(v&&!S.cfg[ck].includes(v)){if((ck==='catGasto'||ck==='catIngreso')&&!esOtros(v)&&!(S.cfg.colores||{})[v]&&!(v in slotsCat()))S.cfg.colores={...(S.cfg.colores||{}),[v]:colorLibre()};S.cfg[ck]=[...S.cfg[ck],v];putCfg();render()}}
   else if(k==='vset'){const p1=$('#v-p1').value,p2=$('#v-p2').value,er=$('#v-err');
     if(p1.length<10){er.textContent='Usá al menos 10 caracteres.';er.hidden=false;return}if(p1!==p2){er.textContent='Las dos contraseñas no coinciden.';er.hidden=false;return}
     const salt=crypto.getRandomValues(new Uint8Array(16));const key=await deriveKey(p1,salt);const s=await seal(key,[]);
