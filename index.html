@@ -1375,8 +1375,8 @@ function tabFondos(){const F=fondoSaldos(),m=S.mes;const z={ARS:0,USD:0,ing:{ARS
   return`<p class="muted small">Separá la plata de obra de la tuya, aunque esté en la misma cuenta. Cuando cargás un gasto o un ingreso elegís <b>Personal</b> u <b>Obra</b>. Lo de obra no se mezcla con tu resultado del mes.</p>
   ${(()=>{const sp=ctasSoloPers(),dst=cuentaObra(),au=(F._auto||[]).filter(a=>a.mon==='ARS');const C=S.cfg.cuentas.filter(c=>!esTarjeta(c));
     return`<div class="reglas"><span class="eyebrow">${ic('gear',13)} Reglas</span>
-     <p class="small">Cuentas solo personales (obra siempre en $ 0):</p><div class="chips">${C.map(c=>`<button type="button" class="chip ${sp.includes(c)?'on':''}" data-act="solopers" data-k="${esc(c)}">${sp.includes(c)?ic('tick',13):''}${esc(c)}</button>`).join('')}</div>
-     <label class="fld"><span>La plata de obra se guarda en</span><select class="inp" id="f-ctaobra">${C.filter(c=>!sp.includes(c)).map(c=>`<option ${c===dst?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+     <p class="small">Cuentas solo personales (obra siempre en $ 0):</p><div class="chips">${alfa(C).map(c=>`<button type="button" class="chip ${sp.includes(c)?'on':''}" data-act="solopers" data-k="${esc(c)}">${sp.includes(c)?ic('tick',13):''}${esc(c)}</button>`).join('')}</div>
+     <label class="fld"><span>La plata de obra se guarda en</span><select class="inp" id="f-ctaobra">${alfa(C.filter(c=>!sp.includes(c))).map(c=>`<option ${c===dst?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
      ${sp.length&&dst?`<p class="tiny muted">Lo que obra paga o cobra por ${esc(sp.join(' o '))} se descuenta o se suma a la plata de obra en ${esc(dst.toLowerCase())}, sin que tengas que hacer nada.${au.length?' Ahora: '+au.map(a=>`${a.v<0?'obra pagó '+money0(-a.v):'obra cobró '+money0(a.v)} por ${a.c}`).join(', ')+'.':''}</p>`:''}</div>`})()}
   <div class="fsplit"><div><span class="eyebrow">${ic('wallet',13)} Personal</span>${dos(P)}</div><div><span class="eyebrow">${ic('home',13)} Obra</span>${dos(O)}</div></div>
   <p class="tiny muted">Cada uno ya tiene descontado lo que debe en tarjetas${tj?` (obra debe ${money0(tj)} en tarjeta)`:''}. Personal + obra = lo que hay en tus cuentas menos las tarjetas sin pagar.</p>
@@ -1510,7 +1510,7 @@ V.finanzas=()=>{
         ${sel('fper','Período',per,[['todo','Todo el historial'],['mes','Solo '+mesNombre(m)+' (el mes de arriba)'],['rango','Entre fechas']])}
         ${per==='rango'?`<div class="two">${fld('Desde',`<input class="inp" type="date" id="fdesde" value="${esc(S.fdesde||'')}">`)}${fld('Hasta',`<input class="inp" type="date" id="fhasta" value="${esc(S.fhasta||'')}">`)}</div>`:''}
         <div class="two">${sel('ftipo','Tipo',S.ftipo,[['','Todos'],['gasto','Gastos'],['ingreso','Ingresos'],['transf','Transferencias y pases'],['ajuste','Ajustes de saldo'],['reparto','Repartos obra/personal']])}${sel('ffondo','De quién',ff,[['','Personal y obra'],[FMIO,'Solo personal'],[FOBRA,'Solo obra']])}</div>
-        <div class="two">${sel('fcat','Categoría',S.fcat||'',[['','Todas'],...cats.map(c=>[c,c])])}${sel('fcta','Cuenta',S.fcta||'',[['','Todas'],...S.cfg.cuentas.map(c=>[c,c])])}</div>
+        <div class="two">${sel('fcat','Categoría',S.fcat||'',[['','Todas'],...alfa(cats).map(c=>[c,c])])}${sel('fcta','Cuenta',S.fcta||'',[['','Todas'],...alfa(S.cfg.cuentas).map(c=>[c,c])])}</div>
         ${nAct||S.fq?`<button class="btn sm" data-act="flimpiar" style="align-self:flex-start">${ic('x',14)}Limpiar filtros</button>`:''}</div>`:''}
       ${nFut?`<p class="hint">Hay ${nFut} movimiento${nFut>1?'s':''} con fecha futura (cuotas que todavía no llegaron). <button class="lnk" data-act="ffut" style="display:inline;padding:0">Mostrarlos</button></p>`:''}${S.ffut&&per==='todo'?`<p class="hint"><button class="lnk" data-act="ffut" style="display:inline;padding:0">Ocultar los de fecha futura</button></p>`:''}
       ${list.length?`<div class="fres"><span><b>${list.length}</b> movimiento${list.length===1?'':'s'}${per==='rango'?' entre esas fechas':todo?' en todo el historial':' en '+mesNombre(m)}</span>${tt.gas?`<span>Gastos <b>${money0(tt.gas)}</b></span>`:''}${tt.ing?`<span>Ingresos <b class="pos">${money0(tt.ing)}</b></span>`:''}</div>`:''}
@@ -1523,7 +1523,7 @@ V.finanzas=()=>{
   else if(S.ftab==='pres'){
     const P=S.cfg.presupuestos||{};const g={};movsMes(m).forEach(x=>{if(x.tipo==='gasto'&&(x.moneda||'ARS')==='ARS')g[x.categoria]=(g[x.categoria]||0)+(+x.monto||0)});
     body=`<p class="muted small">Tope mensual por categoría, en pesos. Vale para todos los meses. Vacío = sin control.</p>
-    <div>${S.cfg.catGasto.map((c,i)=>{const b=+P[c]||0,v=g[c]||0,pct=b?v/b:0;
+    <div>${alfa(S.cfg.catGasto).map((c,i)=>{const b=+P[c]||0,v=g[c]||0,pct=b?v/b:0;
       return`<div class="bud"><span><span class="dot" style="display:inline-block;background:${catColor(c)};margin-right:8px;vertical-align:1px"></span>${esc(c)}<br><span class="muted small num">${money0(v)}${b?` de ${money0(b)} · ${pct>1?'<span class="neg">te pasaste '+money0(v-b)+'</span>':'quedan '+money0(b-v)}`:''}</span></span>
       <input class="inp" id="pp-${i}" data-cat="${esc(c)}" inputmode="decimal" placeholder="Sin tope" value="${b?nf.format(b):''}" aria-label="Tope para ${esc(c)}">
       ${b?`<div class="bar"><i class="${pct>1?'over':pct>.8?'warn':'ok'}" style="width:${Math.min(pct,1)*100}%"></i></div>`:''}</div>`}).join('')}</div>`;
@@ -1560,7 +1560,7 @@ V.tareas=()=>{
   const head=`<div class="vhead" style="--sc:var(--c-tareas)">${ringBox(hechasHoy/((hechasHoy+pendHoy)||1),`<b class="disp">${hechasHoy}/${hechasHoy+pendHoy}</b><small>hechas hoy</small>`,'var(--c-tareas)')}<div class="vh-t"><span class="eyebrow">Para hoy</span><span class="disp vh-n">${pendHoy}<small>${pendHoy===1?'pendiente':'pendientes'}</small></span><span class="vh-s">${pendHoy?(vencN?`${vencN} ${vencN===1?'vencida':'vencidas'} de días anteriores`:'Vamos que se puede'):'Estás al día'}</span></div></div>`;
   return`${exBanner()}${head}<form class="qadd" data-form="qt"><input class="inp" id="qt" placeholder="${S.tf==='hoy'?'Nueva tarea para hoy…':'Nueva tarea…'}" autocomplete="off" aria-label="Nueva tarea"><button class="btn pri" type="submit">Agregar</button></form>
   <div class="toolbar"><div class="chips">${chips.map(([k,l])=>`<button class="chip ${S.tf===k?'on':''}" data-act="tf" data-k="${k}">${l} <b>${k==='hoy'?act.filter(F.hoy).length+(hbs.length-hbSi)+pgPend.length:act.filter(F[k]).length}</b></button>`).join('')}</div>
-  <select class="inp" id="tl" style="width:auto;margin-left:auto" aria-label="Lista"><option value="">Todas las listas</option>${S.cfg.listas.map(l=>`<option ${S.tl===l?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
+  <select class="inp" id="tl" style="width:auto;margin-left:auto" aria-label="Lista"><option value="">Todas las listas</option>${alfa(S.cfg.listas).map(l=>`<option ${S.tl===l?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
   <article class="card">${S.tf==='hoy'&&(pgPend.length||pgHechos.length||hbs.length||tnH.length||pgProx.length)?`<h4 class="sub">Tareas</h4>`:''}${list.length?`<ul class="list">${list.map(taskRow).join('')}</ul>`:S.tf==='hoy'&&extrasHoy.trim()?`<p class="muted small">No tenés tareas para hoy.</p>`:emptyB(msg[S.tf],'Tarea con fecha y detalle','tarea')}${extrasHoy}</article>`;
 };
 V.notas=()=>{
@@ -1731,7 +1731,7 @@ function notifCard(){const P=window.LIBRETA_PUSH;
    <p class="tiny muted">Activalas en cada equipo donde las quieras: teléfono, compu, etc.</p></article>`}
 V.ajustes=()=>{
   const ed=(k,t,d)=>`<article class="card set"><header class="ch"><h3>${t}</h3></header><p class="muted small">${d}</p>
-   <div class="chips">${S.cfg[k].map(v=>`<span class="chip">${esc(v)}<button class="x" data-act="rmchip" data-k="${k}" data-v="${esc(v)}" aria-label="Quitar ${esc(v)}">${ic('x',13)}</button></span>`).join('')}</div>
+   <div class="chips">${alfa(S.cfg[k]).map(v=>`<span class="chip">${esc(v)}<button class="x" data-act="rmchip" data-k="${k}" data-v="${esc(v)}" aria-label="Quitar ${esc(v)}">${ic('x',13)}</button></span>`).join('')}</div>
    <form data-form="chip" data-k="${k}"><input class="inp" id="chip-${k}" placeholder="Agregar…" autocomplete="off" aria-label="Agregar a ${t}"><button class="btn" type="submit">Agregar</button></form></article>`;
   const F=S.cfg.fiscal;
   return`<div class="grid2">
@@ -1945,9 +1945,9 @@ function accOpts(a,i){if(!(a.tipo==='gasto'||a.tipo==='ingreso'||pideCuenta(a)))
   if(a.tipo==='gasto'||a.tipo==='ingreso'){
     h+=`<div class="aopt"><span class="aol">Es</span>${['personal','obra'].map(v=>`<button type="button" class="chip ${a.es===v?'on':''}" data-act="aiset" data-i="${i}" data-f="es" data-v="${v}">${v==='obra'?'Obra':'Personal'}</button>`).join('')}</div>`;
     const cats=catsDe(a.tipo,a.es==='obra'?FOBRA:FMIO);
-    h+=`<div class="aopt"><span class="aol">Categoría</span>${[a.categoria,...(a.otras||[])].map(c=>`<button type="button" class="chip ${a.categoria===c?'on':''}" data-act="aiset" data-i="${i}" data-f="categoria" data-v="${esc(c)}">${esc(c)}</button>`).join('')}<select class="inp sm" id="ai-cat-${i}" data-i="${i}" aria-label="Otra categoría"><option value="">Otra…</option>${cats.filter(c=>c!==a.categoria&&!(a.otras||[]).includes(c)).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`}
+    h+=`<div class="aopt"><span class="aol">Categoría</span>${[a.categoria,...(a.otras||[])].map(c=>`<button type="button" class="chip ${a.categoria===c?'on':''}" data-act="aiset" data-i="${i}" data-f="categoria" data-v="${esc(c)}">${esc(c)}</button>`).join('')}<select class="inp sm" id="ai-cat-${i}" data-i="${i}" aria-label="Otra categoría"><option value="">Otra…</option>${alfa(cats).filter(c=>c!==a.categoria&&!(a.otras||[]).includes(c)).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`}
   if(pideCuenta(a)){const q=a.tipo==='ingreso'?'¿Dónde entró?':a.tipo==='pase'?'¿En qué cuenta está?':'¿Con qué pagaste?';
-    h+=`<div class="aopt"><span class="aol ${a.cuenta?'':'need'}">${q}</span>${S.cfg.cuentas.map(c=>`<button type="button" class="chip ${a.cuenta===c?'on':''}" data-act="aiset" data-i="${i}" data-f="cuenta" data-v="${esc(c)}">${ic(icoCuenta(c,esTarjeta(c)),14)}${esc(c)}</button>`).join('')}</div>`}
+    h+=`<div class="aopt"><span class="aol ${a.cuenta?'':'need'}">${q}</span>${alfa(S.cfg.cuentas).map(c=>`<button type="button" class="chip ${a.cuenta===c?'on':''}" data-act="aiset" data-i="${i}" data-f="cuenta" data-v="${esc(c)}">${ic(icoCuenta(c,esTarjeta(c)),14)}${esc(c)}</button>`).join('')}</div>`}
   return h}
 function renderAI(){
   if(!S.sheet||S.sheet.kind!=='ai')return;const A=S.ai||{estado:'nuevo'};let h=`<h2>${ic('spark',20)} Decime qué cargo</h2>`;
@@ -2047,7 +2047,8 @@ function go(v){if(!TITLES[v])v='inicio';if(v==='resumen'&&S.view!=='resumen')S.r
 let tt;function toast(t,a){const el=$('#toast');el.textContent=t;if(a){const b=document.createElement('button');b.className='tbtn';b.textContent=a.label;b.onclick=()=>{el.hidden=true;a.fn()};el.appendChild(b)}el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,a?6500:2800)}
 
 /* ---------- formularios ---------- */
-const opts=(arr,sel)=>arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
+const alfa=a=>[...(a||[])].sort((x,y)=>{const ox=/^otr[oa]s?$/i.test(String(x).trim())?1:0,oy=/^otr[oa]s?$/i.test(String(y).trim())?1:0;return ox-oy||String(x).localeCompare(String(y),'es',{sensitivity:'base',numeric:true})});
+const opts=(arr,sel)=>alfa(arr).map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
 const fld=(l,inner,id)=>`<label class="fld" ${id?`id="${id}"`:''}><span>${l}</span>${inner}</label>`;
 const FORM={
  menu:()=>`<h2>Agregar</h2><div class="menu">
@@ -2069,7 +2070,7 @@ const FORM={
   <div class="two">${fld('<span id="f-monto-l">Monto</span>',`<input class="inp big" id="f-monto" inputmode="decimal" placeholder="0" value="${x.monto?nf.format(x.monto):''}" autofocus>`)}${fld('Moneda',`<select class="inp" id="f-mon">${opts(['ARS','USD'],x.moneda||'ARS')}</select>`)}</div>
   ${x.id?'':`${fld('Cuotas',`<select class="inp" id="f-cuotas">${[1,2,3,4,5,6,9,10,12,18,24].map(n=>`<option value="${n}" ${+(x.cuotas||1)===n?'selected':''}>${n===1?'En un pago':n+' cuotas'}</option>`).join('')}</select>`,'f-cuotas-w')}<p class="hint" id="f-cuotas-h"></p>`}
   ${fld('Descripción',`<input class="inp" id="f-desc" placeholder="Ej: Coto, nafta, cliente Pérez" value="${esc(x.desc)}">`)}
-  <div class="two">${fld('Categoría',`<select class="inp" id="f-cat">${opts(cats,x.categoria)}</select>`,'f-cat-w')}${fld('<span id="f-cta-l">Cuenta</span>',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta)}</select>`)}${fld('Hacia',`<select class="inp" id="f-dest">${opts(S.cfg.cuentas,x.destino||S.cfg.cuentas[1])}</select>`,'f-dest-w')}</div>
+  <div class="two">${fld('Categoría',`<select class="inp" id="f-cat">${opts(cats,x.categoria||cats[0])}</select>`,'f-cat-w')}${fld('<span id="f-cta-l">Cuenta</span>',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta||S.cfg.cuentas[0])}</select>`)}${fld('Hacia',`<select class="inp" id="f-dest">${opts(S.cfg.cuentas,x.destino||S.cfg.cuentas[1])}</select>`,'f-dest-w')}</div>
   <div class="two" id="f-recv-w">${fld('Recibís (opcional)',`<input class="inp" id="f-mdest" inputmode="decimal" placeholder="Igual al monto" value="${x.montoDest?nf.format(x.montoDest):''}">`)}${fld('En',`<select class="inp" id="f-mondest">${opts(['ARS','USD'],x.monedaDest||x.moneda||'ARS')}</select>`)}</div>
   <div class="stack" id="f-conv-w"><label class="fld"><span>Cotización que usaste</span><input class="inp" id="f-tc" inputmode="decimal" placeholder="Ej: 1.545" value="${x.tc?nf.format(x.tc):''}"></label>
    ${S.cotiz?`<div class="chips">${DOLARES.filter(([k])=>S.cotiz[k]&&(+S.cotiz[k].venta||+S.cotiz[k].compra)).map(([k,l])=>`<button type="button" class="chip" data-act="settc" data-v="${+S.cotiz[k].venta||+S.cotiz[k].compra}">${l} $ ${nf0.format(+S.cotiz[k].venta||+S.cotiz[k].compra)}</button>`).join('')}</div>`:''}
@@ -2121,7 +2122,7 @@ const FORM={
   <div class="two">${fld('Monto aproximado',`<input class="inp big" id="f-monto" inputmode="decimal" value="${x.monto?nf.format(x.monto):''}">`)}${fld('Moneda',`<select class="inp" id="f-mon">${opts(['ARS','USD'],x.moneda||'ARS')}</select>`)}</div>
   <div class="two">${fld('Se repite',`<select class="inp" id="f-frec"><option value="mensual">Todos los meses</option><option value="anual" ${x.frecuencia==='anual'?'selected':''}>Una vez por año</option></select>`)}${fld('En el mes',`<select class="inp" id="f-mes">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${+(x.mes||(+HOY().slice(5,7)))===i+1?'selected':''}>${cap(mesNombre('2026-'+pad(i+1)))}</option>`).join('')}</select>`,'f-mes-w')}</div>
   <div class="two">${fld('Vence el día',`<input class="inp" type="number" min="1" max="31" id="f-dia" value="${esc(x.dia||10)}">`)}${fld('Categoría',`<select class="inp" id="f-cat">${opts(S.cfg.catGasto,x.categoria||'Servicios')}</select>`)}</div>
-  <div class="two">${fld('Se paga con',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta)}</select>`)}${fld('Avisarme',`<select class="inp" id="f-avisar">${[[0,'El mismo día'],[1,'1 día antes'],[2,'2 días antes'],[3,'3 días antes'],[5,'5 días antes'],[7,'1 semana antes']].map(([v,l])=>`<option value="${v}" ${(x.avisar==null?3:+x.avisar)===v?'selected':''}>${l}</option>`).join('')}</select>`)}</div>
+  <div class="two">${fld('Se paga con',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta||S.cfg.cuentas[0])}</select>`)}${fld('Avisarme',`<select class="inp" id="f-avisar">${[[0,'El mismo día'],[1,'1 día antes'],[2,'2 días antes'],[3,'3 días antes'],[5,'5 días antes'],[7,'1 semana antes']].map(([v,l])=>`<option value="${v}" ${(x.avisar==null?3:+x.avisar)===v?'selected':''}>${l}</option>`).join('')}</select>`)}</div>
   <label class="ckl"><input type="checkbox" id="f-deb" ${x.debito?'checked':''}> Débito automático</label>
   <label class="ckl" id="f-auto-w"><input type="checkbox" id="f-auto" ${x.auto===false?'':'checked'}> Cargarlo solo en movimientos el día del débito</label>
   <p class="hint" id="f-auto-h">El día que vence se suma a tus gastos y se descuenta de la cuenta elegida, sin que hagas nada. Si no es débito, lo cargás vos con <b>Pagar</b>.</p>`,
@@ -2151,7 +2152,7 @@ const FORM={
   ${fld('Nombre',`<input class="inp" id="f-vnom" value="${esc(x.nombre||'')}" placeholder="Ej: Gol Trend, Hilux" autofocus>`)}
   <div class="two">${fld('Patente',`<input class="inp mono" id="f-pat" value="${esc(x.patente||'')}" placeholder="AB 123 CD">`)}${fld('Kilómetros actuales',`<input class="inp" id="f-vkm" inputmode="numeric" value="${x.km?nf0.format(x.km):''}">`)}</div>`,
  servicio:x=>`<h2>${x.id?'Editar service':'Nuevo service'}</h2>
-  ${S.vehiculos.length>1?fld('Auto',`<select class="inp" id="f-veh">${S.vehiculos.map(v=>`<option value="${v.id}" ${x.vehiculo===v.id?'selected':''}>${esc(v.nombre)}</option>`).join('')}</select>`):`<input type="hidden" id="f-veh" value="${esc(x.vehiculo||(S.vehiculos[0]||{}).id||'')}">`}
+  ${S.vehiculos.length>1?fld('Auto',`<select class="inp" id="f-veh">${S.vehiculos.slice().sort((a,b)=>String(a.nombre||"").localeCompare(String(b.nombre||""),"es")).map(v=>`<option value="${v.id}" ${x.vehiculo===v.id?'selected':''}>${esc(v.nombre)}</option>`).join('')}</select>`):`<input type="hidden" id="f-veh" value="${esc(x.vehiculo||(S.vehiculos[0]||{}).id||'')}">`}
   <div class="two">${fld('Qué se hizo',`<select class="inp" id="f-stipo">${opts(['Service completo','Aceite y filtros','Cubiertas','Frenos','Batería','Alineación y balanceo','Distribución','Otro'],x.tipo||'Service completo')}</select>`)}${fld('Fecha',`<input class="inp" type="date" id="f-fecha" value="${esc(x.fecha||HOY())}">`)}</div>
   <div class="two">${fld('Km del auto',`<input class="inp" id="f-skm" inputmode="numeric" value="${x.km?nf0.format(x.km):''}">`)}${fld('Costo',`<input class="inp" id="f-costo" inputmode="decimal" value="${x.costo?nf.format(x.costo):''}">`)}</div>
   ${fld('Taller',`<input class="inp" id="f-taller" value="${esc(x.taller||'')}">`)}
@@ -2160,7 +2161,7 @@ const FORM={
   ${x.id?'':`<label class="ckl"><input type="checkbox" id="f-sgasto" checked> Cargar el costo como gasto del auto</label>`}`,
  km:x=>`<h2>Kilómetros de ${esc(x.nombre)}</h2>${fld('Kilómetros actuales',`<input class="inp big" id="f-kmn" inputmode="numeric" value="${x.km?nf0.format(x.km):''}" autofocus>`)}`,
  tarjeta:x=>`<h2>${x.nombre?'Editar tarjeta':'Agregar tarjeta'}</h2>
-  ${x.nombre?`<input type="hidden" id="f-tnom" value="${esc(x.nombre)}"><p class="small">${esc(x.nombre)}</p>`:fld('Cuenta',`<select class="inp" id="f-tnom">${S.cfg.cuentas.filter(c=>!esTarjeta(c)).map(c=>`<option ${/tarjeta|visa|master|amex/i.test(c)?'selected':''}>${esc(c)}</option>`).join('')}</select>`)}
+  ${x.nombre?`<input type="hidden" id="f-tnom" value="${esc(x.nombre)}"><p class="small">${esc(x.nombre)}</p>`:fld('Cuenta',`<select class="inp" id="f-tnom">${alfa(S.cfg.cuentas.filter(c=>!esTarjeta(c))).map(c=>`<option ${/tarjeta|visa|master|amex/i.test(c)?'selected':''}>${esc(c)}</option>`).join('')}</select>`)}
   <p class="hint">${x.nombre?'':'Si no está en la lista, agregá la tarjeta en Ajustes › Cuentas (ej: "Visa Galicia").'}</p>
   <div class="two">${fld('Día de cierre',`<input class="inp" type="number" min="1" max="31" id="f-tcie" value="${esc(x.cierre||25)}">`)}${fld('Día de vencimiento',`<input class="inp" type="number" min="1" max="31" id="f-tven" value="${esc(x.vence||5)}">`)}</div>`,
  cotiz:x=>`<h2>Cotización del dólar</h2><p class="hint">Se actualiza sola cada vez que abrís la libreta. Si querés, corregila a mano.</p>
