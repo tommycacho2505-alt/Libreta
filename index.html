@@ -236,6 +236,37 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .hero .iconbtn{color:#fff;background:rgba(255,255,255,.12)}
 .hero .iconbtn:hover{background:rgba(255,255,255,.22);color:#fff}
 .hero .btn{background:rgba(255,255,255,.14);border-color:transparent;color:#fff}
+.hplata .hus{font-size:clamp(22px,5.5vw,32px);font-weight:700;letter-spacing:-.02em;color:#C6F6D5;margin-top:-4px}
+.hfz b+b{margin-left:4px}
+.hd{display:inline-block;width:8px;height:8px;border-radius:50%}
+.hd.obra{background:#FBBF24}.hd.pers{background:rgba(255,255,255,.7)}
+.hacc{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.18)}
+.hacc li{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:5px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);min-width:0}
+.hacc li:last-child{border-bottom:0;padding-bottom:2px}
+.hacc .hi{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.14);color:#fff;flex:none}
+.hacc .hn2{flex:1;min-width:0;font-weight:600;color:#fff;display:flex;flex-direction:column;gap:3px;overflow-wrap:anywhere}
+.nw{white-space:nowrap}
+.hsub{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12px;font-weight:500;color:rgba(255,255,255,.75)}
+.hsub .so::before,.hsub .sp2::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.hsub .so::before{background:#FBBF24}.hsub .sp2::before{background:rgba(255,255,255,.7)}
+.hacc .hv{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.hacc .hv b{font-family:var(--f-disp);font-stretch:110%;font-weight:700;font-size:18px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;color:#fff}
+.hacc .hv b.u{font-size:15px;color:#C6F6D5}
+.hacc .hv b.neg{color:#FECACA}
+.hacc .hv b .cur{vertical-align:.35em}
+.hacts{display:flex;flex-wrap:wrap;gap:6px}.hacts .btn{padding-left:11px;padding-right:11px}
+.htj{display:inline-flex;align-items:center;gap:7px}.htj svg{flex:none}
+.mescard{display:flex;flex-direction:column;gap:12px}
+.mescard .mk{display:flex;flex-direction:column;gap:8px}
+.mescard .hrow{color:var(--muted)}.mescard .hrow b{color:var(--ink);font-size:17px}
+.mescard .lchart{color:var(--accent)}
+.mescard .hfoot{color:var(--muted)}
+.mescard .hchip{background:var(--sunk);color:var(--ink)}
+.mescard .cota{border-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.mescard .cota::before{border-top-color:color-mix(in srgb,var(--muted) 45%,transparent)}
+.mescard .cota i,.mescard .cota i::after{background:var(--accent)}
+.obrah{display:block;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#F59E0B 10%,var(--surface));border:1px solid color-mix(in srgb,#F59E0B 35%,var(--line));color:var(--ink)}
+.obrah svg{display:inline-block;vertical-align:-2px;color:#D97706;margin-right:2px}
 .home-top{display:grid;grid-template-columns:1fr;gap:16px}
 .side{display:flex;flex-direction:column;gap:12px;min-width:0}
 @media (min-width:1080px){.home-top{grid-template-columns:1.3fr 1fr;grid-template-areas:'hero side' 'tiles side';align-items:start}.home-top>.hero{grid-area:hero}.home-top>.side{grid-area:side}.home-top>.tiles{grid-area:tiles}}
@@ -836,7 +867,7 @@ const DEF={
   dolarRef:'mep'
 };
 const COLS=['movs','tareas','notas','turnos','fijos','facturas','papeles','vehiculos','servicios','archivos','habitos'];
-const COLMAP={reparto:'movs',pase:'movs',habito:'habitos',mov:'movs',ajmov:'movs',archivo:'archivos',tarea:'tareas',nota:'notas',turno:'turnos',fijo:'fijos',factura:'facturas',papel:'papeles',vehiculo:'vehiculos',servicio:'servicios'};
+const COLMAP={cambio:'movs',reparto:'movs',pase:'movs',habito:'habitos',mov:'movs',ajmov:'movs',archivo:'archivos',tarea:'tareas',nota:'notas',turno:'turnos',fijo:'fijos',factura:'facturas',papel:'papeles',vehiculo:'vehiculos',servicio:'servicios'};
 const TITLES={inicio:'Inicio',finanzas:'Plata',resumen:'Resumen',tareas:'Tareas',agenda:'Agenda',notas:'Notas',impuestos:'Impuestos',papeles:'Papeles',auto:'Auto',claves:'Claves',ajustes:'Ajustes'};
 const NAVIC={inicio:'home',finanzas:'wallet',resumen:'chart',tareas:'check',agenda:'cal',notas:'note',impuestos:'receipt',papeles:'idcard',auto:'car',claves:'key',ajustes:'gear'};
 const MAS=['resumen','agenda','notas','impuestos','papeles','auto','claves','ajustes'];
@@ -975,6 +1006,11 @@ const esTarjeta=c=>!!S.cfg.tarjetas[c];
 const cuentaPago=()=>S.cfg.cuentas.find(c=>!esTarjeta(c)&&/banco/i.test(c))||S.cfg.cuentas.find(c=>!esTarjeta(c))||S.cfg.cuentas[0];
 /* Dólar */
 const rateOf=k=>{const r=S.cotiz&&S.cotiz[k];if(!r)return 0;const c=+r.compra||0,v=+r.venta||0;return c&&v?(c+v)/2:(v||c)};
+const tcDe=(k,lado)=>{const r=S.cotiz&&S.cotiz[k];if(!r)return 0;return +r[lado]||+r.venta||+r.compra||0};
+const tcTarjeta=()=>tcDe('tarjeta','venta')||Math.round(tcDe('oficial','venta')*1.3)||0;
+const fijoPes=f=>f.moneda==='USD'&&f.enPesos!==false;
+const fijoARS=f=>fijoPes(f)?Math.round((+f.monto||0)*tcTarjeta()):0;
+const fijoTxt=f=>money(f.monto,f.moneda)+(fijoARS(f)?' ≈ '+money0(fijoARS(f)):'');
 const refRate=()=>rateOf(S.cfg.dolarRef||'mep')||rateOf('mep')||rateOf('oficial');
 const tarjRate=()=>rateOf('tarjeta')||rateOf('oficial')*1.3;
 function saldos(hasta){const acc={};S.movs.forEach(x=>{if(hasta&&(x.fecha||'')>hasta)return;if(x.tipo==='reparto')return;const mo=x.moneda||'ARS',m=+x.monto||0;
@@ -1055,8 +1091,8 @@ function avisos(){
   const venc=S.tareas.filter(t=>!t.hecha&&t.fecha&&t.fecha<h).length;
   if(venc)out.push({k:'neg',t:`${venc} tarea${venc>1?'s':''} vencida${venc>1?'s':''}`,go:'tareas'});
   S.turnos.filter(e=>e.fecha===h).sort(byEv).forEach(e=>out.push({k:'info',t:`Hoy${e.hora?' a las '+e.hora:''}: ${e.titulo}`,go:'agenda'}));
-  S.fijos.filter(f=>fijoAplica(f,m)).forEach(f=>{const e=fijoEstado(f,m);if(e.k==='vencido')out.push({k:'neg',t:`${f.nombre}: ${f.debito?'confirmá si se debitó':'venció sin pagar'} (${money0(f.monto)})`,go:'finanzas',ftab:'fijos'});
-    else if(e.k==='pronto')out.push({k:'warn',t:`${f.nombre}: ${e.t.toLowerCase()} · ${money(f.monto,f.moneda)}${f.debito?' por débito':''}`,go:'finanzas',ftab:'fijos'})});
+  S.fijos.filter(f=>fijoAplica(f,m)).forEach(f=>{const e=fijoEstado(f,m);if(e.k==='vencido')out.push({k:'neg',t:`${f.nombre}: ${f.debito?'confirmá si se debitó':'venció sin pagar'} (${fijoTxt(f)})`,go:'finanzas',ftab:'fijos'});
+    else if(e.k==='pronto')out.push({k:'warn',t:`${f.nombre}: ${e.t.toLowerCase()} · ${fijoTxt(f)}${f.debito?' por débito':''}`,go:'finanzas',ftab:'fijos'})});
   Object.keys(S.cfg.tarjetas).forEach(n=>{const c=ciclo(n);const dc=diasHasta(c.cierre),dv=diasHasta(c.venceAnt);
     if(!c.pagadoAnt&&c.anterior.ars+c.anterior.usd>0&&dv<=3)out.push({k:dv<0?'neg':'warn',t:`${n}: el resumen de ${money0(c.anterior.ars)}${c.anterior.usd?' + '+usd0(c.anterior.usd):''} ${dv<0?'venció':dv===0?'vence hoy':'vence el '+fechaDia(c.venceAnt)}`,go:'finanzas',ftab:'tarj'});
     if(dc<=2)out.push({k:'info',t:`${n} cierra ${dc===0?'hoy':dc===1?'mañana':'el '+fechaDia(c.cierre)}: lo que compres después pasa al resumen siguiente`,go:'finanzas',ftab:'tarj'})});
@@ -1110,12 +1146,15 @@ function movRow(x){
   if(x.pase)return`<li class="row mov"><button class="rb" data-edit="pase" data-id="${x.id}"><span class="cico" style="--cc:var(--c-plata)">${ic('swap',16)}</span>
   <span class="txt"><span class="rt">${esc(x.desc||(x.ganancia?'Ganancia':'Pase de plata'))}</span><span class="rm"><span>${esc(fondoN(x.fondo))} → ${esc(fondoN(x.fondoDest))}</span><span>${esc(x.cuenta||'')}</span>${x.ganancia?'<span class="tag gan">ganancia</span>':''}</span></span>
   ${(()=>{const sg=!x._v?0:x.tipo==='gasto'?-1:1,v=Math.abs(+x.monto||0);return`<span class="amt ${sg>0?'pos':sg<0?'':'muted'}">${sg>0?'+':sg<0?'−':''}${bigM(v,x.moneda)}</span>`})()}</button></li>`;
+  if(x.cambio){const fz=esPers(x)?'':`<span class="tag fz">${esc(fondoN(x.fondo))}</span>`;return`<li class="row mov"><button class="rb" data-edit="cambio" data-id="${x.id}"><span class="cico" style="--cc:var(--pos)">${ic('swap',16)}</span>
+  <span class="txt"><span class="rt">${esc(x.desc||(x.moneda==='USD'?'Cambio de dólares a pesos':'Compra de dólares'))}</span><span class="rm">${fz}<span>${money(x.monto,x.moneda)} → ${money(x.montoDest,x.monedaDest)}</span>${+x.tc?`<span>a ${money0(+x.tc)}</span>`:''}<span>${esc(x.cuenta||'')}${x.destino&&x.destino!==x.cuenta?' → '+esc(x.destino):''}</span></span></span>
+  <span class="amt muted">${bigM(x.montoDest,x.monedaDest)}</span></button></li>`}
   if(x.tipo==='ajuste'){const v=+x.monto||0;return`<li class="row mov"><button class="rb" data-edit="ajmov" data-id="${x.id}"><span class="cico" style="--cc:var(--muted)">${ic('rep',16)}</span>
   <span class="txt"><span class="rt">Ajuste de saldo</span><span class="rm"><span>${esc(x.cuenta||'')}</span>${exTag(x)}</span></span>
   <span class="amt muted">${v<0?'−':'+'}${bigM(Math.abs(v),x.moneda)}</span></button></li>`}
   const ing=x.tipo==='ingreso',tr=x.tipo==='transf';
   const meta=tr?`<span>${esc(x.cuenta||'')} → ${esc(x.destino||'')}</span>${x.montoDest&&(x.monedaDest||x.moneda)!==x.moneda?`<span>recibiste ${money(x.montoDest,x.monedaDest)}</span>`:''}${+x.tc?`<span>a $ ${nf.format(+x.tc)}</span>`:''}`
-    :`<span>${esc(x.categoria||'')}</span><span>${esc(x.cuenta||'')}</span>${x.cuota?`<span class="tag">cuota ${x.cuota.n}/${x.cuota.total}</span>`:''}${x.fijo?'<span class="tag">pago fijo</span>':''}${x.factura?'<span class="tag">factura</span>':''}`;
+    :`<span>${esc(x.categoria||'')}</span><span>${esc(x.cuenta||'')}</span>${x.cuota?`<span class="tag">cuota ${x.cuota.n}/${x.cuota.total}</span>`:''}${x.fijo?'<span class="tag">pago fijo</span>':''}${+x.usd?`<span>US$ ${nf.format(+x.usd)} a ${money0(+x.tc)}${x.estimado?' (estimado)':''}</span>`:''}${x.factura?'<span class="tag">factura</span>':''}`;
   const fz=esPers(x)?'':`<span class="tag fz">${esc(fondoN(x.fondo))}</span>`;
   return`<li class="row mov"><button class="rb" data-edit="mov" data-id="${x.id}"><span class="cico" style="--cc:${tr?'var(--muted)':catColor(x.categoria)}">${tr?ic('swap',16):esc((x.categoria||'?').charAt(0))}</span>
   <span class="txt"><span class="rt">${esc(x.desc||(tr?'Transferencia':x.categoria)||'Sin descripción')}</span><span class="rm">${fz}${meta}${exTag(x)}</span></span>
@@ -1125,8 +1164,8 @@ function fijosList(m,short,filtro,nuevo){
   let fs=[...S.fijos].filter(f=>fijoAplica(f,m)).sort((a,b)=>(+a.dia||0)-(+b.dia||0));if(filtro)fs=fs.filter(filtro);
   if(!fs.length)return emptyB(filtro?'No tenés pagos impositivos cargados para este mes. Agregá la cuota del monotributo, IVA, ganancias o ingresos brutos con su día de vencimiento.':'Cargá lo que pagás todos los meses (alquiler, luz, internet, prepaga, monotributo…) y acá vas a ver qué falta pagar o debitarse.','Agregar pago fijo','fijo',nuevo);
   let pendARS=0;
-  const rows=fs.map(f=>{const e=fijoEstado(f,m);if(e.k!=='pagado'&&(f.moneda||'ARS')==='ARS')pendARS+=+f.monto||0;
-    return`<li class="row fij"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span><span>día ${esc(f.dia)}${f.frecuencia==='anual'?' · anual':''}</span>${f.debito?`<span>débito automático${f.auto!==false?' · se carga solo':''}</span>`:''}${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${exTag(f)}</span></button>
+  const rows=fs.map(f=>{const e=fijoEstado(f,m);if(e.k!=='pagado'){if((f.moneda||'ARS')==='ARS')pendARS+=+f.monto||0;else pendARS+=fijoARS(f)}
+    return`<li class="row fij"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${fijoTxt(f)}</span><span>día ${esc(f.dia)}${f.frecuencia==='anual'?' · anual':''}</span>${f.debito?`<span>débito automático${f.auto!==false?' · se carga solo':''}</span>`:''}${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${exTag(f)}</span></button>
     <span class="acts"><span class="pill ${e.k}">${e.t}</span>${e.k==='pagado'?`<button class="btn sm" data-act="despagar" data-id="${f.id}" data-m="${m}">Deshacer</button>`:`<button class="btn sm ${f.debito?'':'pri'}" data-act="pagar" data-id="${f.id}" data-m="${m}">${f.debito?'Se debitó':'Pagar'}</button>`}</span></li>`}).join('');
   return`<ul class="list">${rows}</ul><div class="foot"><span>Falta en ${mesNombre(m)}</span><span class="num">${money(pendARS)}</span></div>${short?'':`<div><button class="btn sm" data-new="fijo" ${nuevo||''}>${ic('plus',15)}Agregar pago fijo</button></div>`}`;
 }
@@ -1319,6 +1358,18 @@ function docsBlock(col,id){const ds=docsDe(col,id);
 const V={};
 function loadingView(){return`<div class="hello"><span class="eyebrow">Abriendo tu libreta…</span></div><div class="sk" style="height:250px"></div><div class="tiles">${'<div class="sk" style="height:118px"></div>'.repeat(4)}</div><div class="sk"></div>`}
 const cmdBar=()=>`<form class="cmd" data-form="cmd">${ic('spark',18)}<input id="cmd" placeholder="Escribí o tocá el micrófono: “gasté 2 palos en una tele con la visa”" autocomplete="off" aria-label="Cargar o preguntar"><button type="button" class="cmdmic" data-act="voz" aria-label="Hablar">${ic('mic',18)}</button><button class="btn sm pri" type="submit" aria-label="Enviar">${ic('send',16)}</button></form>`;
+function heroPlata(){const P=plataPorCuenta(),F=fondoSaldos(),ob=hayObra(),O=F[FOBRA]||{},M=F[FMIO]||{};
+  const rows=P.disp.filter(r=>Math.round(r.ars)||Math.round(r.usd));
+  const dos=(a,u)=>[Math.round(a)||!Math.round(u)?money0(a):'',Math.round(u)?usd0(u):''].filter(Boolean).map(t=>`<span class="nw">${t}</span>`).join(' + ');
+  const sub=n=>{if(!ob)return'';const o=((O.ctas||{})[n])||{},p=((M.ctas||{})[n])||{};if(!Math.round(o.ARS||0)&&!Math.round(o.USD||0))return'';
+    return`<span class="hsub"><span class="so">Obra ${dos(o.ARS||0,o.USD||0)}</span><span class="sp2">Tuyo ${dos(p.ARS||0,p.USD||0)}</span></span>`};
+  return`<section class="hero hplata">${PLAN}<span class="hojo-w">${ojoBtn()}</span>
+   <div class="stack"><span class="eyebrow">Tu plata hoy</span><span class="disp hn">${cnt(P.ars)}</span>${Math.round(P.usd)?`<span class="disp hus">${cnt(P.usd,'USD')}</span>`:''}</div>
+   ${ob?`<div class="hrow hfz"><span><i class="hd obra"></i>Obra <b class="disp">${bigM(O.ARS||0)}</b>${Math.round(O.USD||0)?`<b class="disp">+ ${bigM(O.USD,'USD')}</b>`:''}</span><span><i class="hd pers"></i>Personal <b class="disp">${bigM(M.ARS||0)}</b>${Math.round(M.USD||0)?`<b class="disp">+ ${bigM(M.USD,'USD')}</b>`:''}</span></div>`:''}
+   ${rows.length?`<ul class="hacc">${rows.map(r=>`<li><span class="hi">${ic(icoCuenta(r.n,false),16)}</span><span class="hn2">${esc(r.n)}</span><span class="hv">${Math.round(r.ars)||!Math.round(r.usd)?`<b class="${r.ars<0?'neg':''}">${bigM(r.ars)}</b>`:''}${Math.round(r.usd)?`<b class="u">${bigM(r.usd,'USD')}</b>`:''}</span>${sub(r.n)}</li>`).join('')}</ul>`:`<p class="hfoot">Cargá cuánto tenés hoy en cada cuenta desde Plata › Cuentas › Ajustar.</p>`}
+   ${P.tjs.length?`<div class="hfoot"><span class="htj">${ic('card',14)}<span>Tarjetas sin pagar: ${P.tjs.map(r=>`${esc(r.n)} ${dos(-r.ars,-r.usd)}`).join(' · ')}</span></span></div>`:''}
+   <div class="hacts"><button class="btn sm" data-go="finanzas" data-ftab="ctas">${ic('wallet',14)}Cuentas</button>${ob?`<button class="btn sm" data-go="finanzas" data-ftab="fondos">${ic('home',14)}Obra</button>`:''}<button class="btn sm" data-new="cambio" data-fondo="${ob&&Math.round(O.USD||0)>0?FOBRA:FMIO}">${ic('swap',14)}Cambiar dólares</button></div>
+  </section>`}
 V.inicio=()=>{
   const h=HOY(),m=h.slice(0,7),t=tot(movsMes(m)),tu=tot(movsMes(m),'USD'),hasUSD=S.movs.some(x=>x.moneda==='USD');
   const hr=new Date().getHours(),sal=hr<13?'Buen día':hr<20?'Buenas tardes':'Buenas noches';
@@ -1333,18 +1384,11 @@ V.inicio=()=>{
   return`${exBanner()}
   <div class="hello"><span class="eyebrow">${fechaLarga(h)}</span><h2>${sal}, Cach</h2></div>
   <div class="home-top">
-   ${mascara(()=>`<section class="hero">${PLAN}<span class="hojo-w">${ojoBtn()}</span>
-    <div class="stack"><span class="eyebrow">Saldo ${hayObra()?'personal ':''}de ${mesNombre(m)}</span><span class="disp hn">${cnt(t.saldo)}</span></div>
-    <div class="hrow"><span>${ic('arrowup',15)}Ingresos <b class="disp">${cnt(t.ing)}</b></span><span>${ic('arrowdn',15)}Gastos <b class="disp">${cnt(t.gas)}</b></span>${hasUSD?`<span>Dólares <b class="disp">${cnt(tu.saldo,'USD')}</b></span>`:''}</div>
-    ${L.svg}
-    <div class="hfoot"><span>${varPct==null?'Gasto acumulado del mes':`<span class="hchip">${varPct>0?'+':''}${varPct}%</span>&nbsp; gasto vs. mismo día de ${mesNombre(L.prev)}`}</span><span>${L.proy>0&&L.dd<L.n?'Cerrarías el mes en '+compact(L.proy):''}</span></div>
-    <div class="cota" aria-hidden="true"><i style="width:${(d/n*100).toFixed(1)}%"></i></div>
-    <div class="hfoot"><span>Día ${d} de ${n}</span><span>${n-d===0?'Último día del mes':`Quedan ${n-d} días`}</span></div>
-   </section>`)}
+   ${mascara(heroPlata)}
    <div class="side">${cmdBar()}
     ${av.length?`<div class="alerts">${av.slice(0,6).map(a=>`<button class="alert ${a.k}" data-go="${a.go}" ${a.ftab?`data-ftab="${a.ftab}"`:''}><span class="b">${ic(aic[a.k],15)}</span><span class="t">${esc(a.t)}</span>${ic('right',16)}</button>`).join('')}</div>`:`<div class="card"><p class="muted">Todo en orden: no hay nada vencido ni por vencer.</p></div>`}
-    <div class="card" style="--sc:var(--c-plata)"><header class="ch"><h3><span class="ico">${ic('wallet',16)}</span>Tu plata</h3><a href="#finanzas" class="lnk" data-go="finanzas" data-ftab="ctas">Cuentas${ic('right',14)}</a></header>${plataBlock(false)}</div>
-    <div class="card"><header class="ch"><h3>Dólar hoy</h3><span class="muted small">Solo de referencia</span></header>${ratesBlock()}</div>
+    ${(()=>{const a=ajBox();return a?`<div class="card">${a}</div>`:''})()}
+    <article class="card"><header class="ch"><h3><span class="ico">${ic('chart',16)}</span>Gastos de ${mesNombre(m)}</h3><a href="#resumen" class="lnk" data-go="resumen">Resumen${ic('right',14)}</a></header>${donutBlock(m)}</article>
    </div>
    <div class="tiles">${tilesHtml(['finanzas','resumen','tareas','agenda','impuestos','papeles','auto','claves'])}</div>
   </div>
@@ -1357,13 +1401,20 @@ V.inicio=()=>{
    <article class="card" style="--sc:var(--neg)"><header class="ch"><h3><span class="ico">${ic('rep',16)}</span>Vencimientos de ${mesNombre(m)}</h3><a href="#finanzas" class="lnk" data-go="finanzas" data-ftab="fijos">Pagos fijos${ic('right',14)}</a></header>${fijosList(m,true)}</article>
   </div>
   <div class="grid3">
-   <article class="card"><header class="ch"><h3>Gastos por categoría</h3><span class="muted small">${mesLargo(m)}</span></header>${donutBlock(m)}</article>
+   <article class="card mescard"><header class="ch"><h3><span class="ico">${ic('chart',16)}</span>Tu mes</h3><span class="muted small">${cap(mesLargo(m))}</span></header>
+    <div class="mk"><div class="stack"><span class="eyebrow">Gastaste ${hayObra()?'(personal) ':''}en ${mesNombre(m)}</span><span class="big-n" style="font-size:clamp(28px,5vw,38px)">${cnt(t.gas)}</span></div><div class="hrow"><span>${ic('arrowup',15)}Entró <b class="disp">${cnt(t.ing)}</b></span>${hasUSD&&Math.round(tu.gas)?`<span>En dólares <b class="disp">${cnt(tu.gas,'USD')}</b></span>`:''}</div></div>
+    ${L.svg}
+    <div class="hfoot"><span>${varPct==null?'Gasto acumulado del mes':`<span class="hchip">${varPct>0?'+':''}${varPct}%</span>&nbsp; gasto vs. mismo día de ${mesNombre(L.prev)}`}</span><span>${L.proy>0&&L.dd<L.n?'Cerrarías el mes en '+compact(L.proy):''}</span></div>
+    <div class="cota" aria-hidden="true"><i style="width:${(d/n*100).toFixed(1)}%"></i></div>
+    <div class="hfoot"><span>Día ${d} de ${n}</span><span>${n-d===0?'Último día del mes':`Quedan ${n-d} días`}</span></div>
+   </article>
    <article class="card"><header class="ch"><h3>Gasto por día</h3><span class="muted small">${cap(mesNombre(m))}</span></header>${hm?`${hm.html}<div class="foot"><span>Día más caro: <b style="color:var(--ink)">${hm.top} de ${mesNombre(m)}</b></span><span class="num">${money0(hm.mx)}</span></div><div class="hml">Menos <i style="background:var(--sunk)"></i><i style="background:color-mix(in srgb,var(--accent) 22%,var(--sunk))"></i><i style="background:color-mix(in srgb,var(--accent) 45%,var(--sunk))"></i><i style="background:color-mix(in srgb,var(--accent) 70%,var(--sunk))"></i><i style="background:var(--accent)"></i> Más</div>`:'<p class="muted small">Cuando cargues gastos vas a ver qué días gastás más.</p>'}</article>
-   ${mono?`<article class="card" style="--sc:var(--c-impuestos)"><header class="ch"><h3><span class="ico">${ic('receipt',16)}</span>Monotributo ${mono.ci.c}</h3><a href="#impuestos" class="lnk" data-go="impuestos">Ver${ic('right',14)}</a></header><div class="mono-wrap">${ringBox(mono.pct,`<b class="disp">${Math.round(mono.pct*100)}%</b><small>del tope</small>`,mono.pct>=1?'var(--neg)':mono.pct>=.8?'var(--warn)':'var(--c-impuestos)')}<div class="stack"><span class="eyebrow">Te queda por facturar</span><span class="big-n" style="font-size:clamp(24px,4vw,32px)">${cnt(mono.queda)}</span><span class="muted small">Cuota ${money0(mono.cuota)} · vence el 20</span></div></div></article>`:''}
+   <article class="card"><header class="ch"><h3>Dólar hoy</h3><span class="muted small">Solo de referencia</span></header>${ratesBlock()}</article>
   </div>
-  <div class="grid2">
+  <div class="${mono?'grid3':'grid2'}">
    <article class="card"><header class="ch"><h3>Ingresos y gastos</h3><span class="muted small">Últimos 6 meses</span></header>${bars6(m)}</article>
    <article class="card"><header class="ch"><h3>Cuotas por pagar</h3><a href="#finanzas" class="lnk" data-go="finanzas" data-ftab="tarj">Tarjetas${ic('right',14)}</a></header>${totComp||totU?`<div class="stack"><span class="eyebrow">Comprometido en cuotas</span><span class="big-n" style="font-size:clamp(24px,4vw,32px)">${cnt(totComp)}</span>${totU?`<span class="muted small">y ${usd0(totU)} en cuotas en dólares</span>`:''}</div>${barChart(comp.map(x=>mesCorto(x.ym)),[{name:'Cuotas',color:'var(--accent)',vals:comp.map(x=>x.v)}],{hl:0,titles:comp.map(x=>mesLargo(x.ym)),aria:'Cuotas a pagar por mes'})}`:'<p class="muted small">Cuando cargues compras en cuotas vas a ver acá cuánto tenés comprometido mes a mes.</p>'}</article>
+   ${mono?`<article class="card" style="--sc:var(--c-impuestos)"><header class="ch"><h3><span class="ico">${ic('receipt',16)}</span>Monotributo ${mono.ci.c}</h3><a href="#impuestos" class="lnk" data-go="impuestos">Ver${ic('right',14)}</a></header><div class="mono-wrap">${ringBox(mono.pct,`<b class="disp">${Math.round(mono.pct*100)}%</b><small>del tope</small>`,mono.pct>=1?'var(--neg)':mono.pct>=.8?'var(--warn)':'var(--c-impuestos)')}<div class="stack"><span class="eyebrow">Te queda por facturar</span><span class="big-n" style="font-size:clamp(24px,4vw,32px)">${cnt(mono.queda)}</span><span class="muted small">Cuota ${money0(mono.cuota)} · vence el 20</span></div></div></article>`:''}
   </div>`;
 };
 const monthbar=k=>`<div class="mbar"><button class="iconbtn" data-act="mprev" data-k="${k}" aria-label="Mes anterior">${ic('left',18)}</button><strong>${mesLargo(S[k])}</strong><button class="iconbtn" data-act="mnext" data-k="${k}" aria-label="Mes siguiente">${ic('right',18)}</button>${S[k]!==HOY().slice(0,7)?`<button class="btn sm" data-act="mhoy" data-k="${k}">Hoy</button>`:''}</div>`;
@@ -1383,16 +1434,16 @@ function tabTarjetas(){
 }
 function tabSusc(){
   const ss=S.fijos.filter(esSusc).sort((a,b)=>(a.moneda||'ARS').localeCompare(b.moneda||'ARS')||mensualEq(b)-mensualEq(a));
-  const tA=ss.filter(f=>(f.moneda||'ARS')!=='USD').reduce((s,f)=>s+mensualEq(f),0),tU=ss.filter(f=>f.moneda==='USD').reduce((s,f)=>s+mensualEq(f),0);
+  const tA=ss.filter(f=>(f.moneda||'ARS')!=='USD').reduce((s,f)=>s+mensualEq(f),0),tU=ss.filter(f=>f.moneda==='USD').reduce((s,f)=>s+mensualEq(f),0),tUP=ss.filter(fijoPes).reduce((s,f)=>s+mensualEq(f),0)*tcTarjeta();
   return`<p class="muted small">Lo que pagás todos los meses por servicios y membresías. Pesos y dólares se suman por separado.</p>
-  ${ss.length?`<div class="kpis">${kpi('Por mes en pesos',bigM(tA))}${tU?kpi('Por mes en dólares',bigM(tU,'USD'),'pos'):''}${kpi('Por año en pesos',bigM(tA*12))}${tU?kpi('Por año en dólares',bigM(tU*12,'USD'),'pos'):''}</div>
-  <ul class="list">${ss.map(f=>`<li class="row"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)} ${f.frecuencia==='anual'?'por año':'por mes'}</span><span>${esc(f.cuenta||'')}</span></span></button><span class="amt">${bigM(mensualEq(f)*12,f.moneda)}<span class="muted small"> /año</span></span></li>`).join('')}</ul>`:''}
+  ${ss.length?`<div class="kpis">${kpi('Por mes en pesos',bigM(tA))}${tU?kpi('Por mes en dólares',bigM(tU,'USD'),'pos'):''}${kpi('Por año en pesos',bigM(tA*12))}${tU?kpi('Por año en dólares',bigM(tU*12,'USD'),'pos'):''}${tUP?kpi('Todo en pesos por mes (aprox.)',bigM(tA+tUP)):''}</div>${tUP?`<p class="tiny muted">Las suscripciones en dólares que se cobran en pesos se calculan al dólar tarjeta de hoy (${money0(tcTarjeta())}).</p>`:''}
+  <ul class="list">${ss.map(f=>`<li class="row"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${fijoTxt(f)} ${f.frecuencia==='anual'?'por año':'por mes'}</span><span>${esc(f.cuenta||'')}</span></span></button><span class="amt">${bigM(mensualEq(f)*12,f.moneda)}<span class="muted small"> /año</span></span></li>`).join('')}</ul>`:''}
   ${emptyB(ss.length?'':'No cargaste suscripciones todavía (Netflix, Spotify, iCloud, Google One, gimnasio…).','Agregar suscripción','fijo','data-cat="Suscripciones" data-deb="1"')}`;
 }
 function tabFondos(){const F=fondoSaldos(),m=S.mes;const z={ARS:0,USD:0,ing:{ARS:0,USD:0},gas:{ARS:0,USD:0},ctas:{}};
   const P=F[FMIO]||z,O=F[FOBRA]||z;
   const dos=(o)=>`<span class="big-n" style="font-size:clamp(26px,5vw,36px)">${cnt(o.ARS||0)}</span>${Math.round(o.USD||0)?`<span class="muted small">y ${usd0(o.USD)}</span>`:''}`;
-  let ci=0,cg=0;movsMesTodos(m).forEach(x=>{if(esPers(x)||(x.moneda||'ARS')!=='ARS')return;if(x.tipo==='ingreso')ci+=+x.monto||0;else if(x.tipo==='gasto')cg+=+x.monto||0});
+  let ci=0,cg=0,ciu=0;movsMesTodos(m).forEach(x=>{if(esPers(x))return;if((x.moneda||'ARS')!=='ARS'){if(x.tipo==='ingreso')ciu+=+x.monto||0;return}if(x.tipo==='ingreso')ci+=+x.monto||0;else if(x.tipo==='gasto')cg+=+x.monto||0});
   const ms=S.movs.filter(x=>(x.fecha||'').startsWith(m)&&(x.tipo==='reparto'||!esPers(x)||fk(x.fondoDest)===FOBRA)).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.creado||0)-(a.creado||0));
   const tj=Object.entries(O.ctas||{}).filter(([c,v])=>esTarjeta(c)&&Math.round(v.ARS||0)<0).reduce((s,[c,v])=>s-v.ARS,0);
   return`<p class="muted small">Separá la plata de obra de la tuya, aunque esté en la misma cuenta. Cuando cargás un gasto o un ingreso elegís <b>Personal</b> u <b>Obra</b>. Lo de obra no se mezcla con tu resultado del mes.</p>
@@ -1405,15 +1456,16 @@ function tabFondos(){const F=fondoSaldos(),m=S.mes;const z={ARS:0,USD:0,ing:{ARS
   <p class="tiny muted">Cada uno ya tiene descontado lo que debe en tarjetas${tj?` (obra debe ${money0(tj)} en tarjeta)`:''}. Personal + obra = lo que hay en tus cuentas menos las tarjetas sin pagar.</p>
   ${ajBox()}
   ${hayObra()?`<h4 class="sub">Por cuenta</h4><ul class="plist">${S.cfg.cuentas.filter(c=>!esTarjeta(c)&&(Math.round((((F[FOBRA]||{}).ctas||{})[c]||{}).ARS||0)||Math.round((((F[FOBRA]||{}).ctas||{})[c]||{}).USD||0))).map(c=>`<li class="prow"><span class="pico">${ic(icoCuenta(c,false),17)}</span><span class="pn">${esc(c)}${splitCta(c,F)}</span></li>`).join('')}</ul>`:''}
-  <div class="toolbar"><button class="btn sm" data-new="mov" data-tipo="ingreso" data-fondo="${FOBRA}">${ic('arrowup',14)}Cobro de obra</button><button class="btn sm" data-new="mov" data-tipo="gasto" data-fondo="${FOBRA}">${ic('arrowdn',14)}Gasto de obra</button></div>
+  <div class="toolbar"><button class="btn sm" data-new="mov" data-tipo="ingreso" data-fondo="${FOBRA}">${ic('arrowup',14)}Cobro de obra</button><button class="btn sm" data-new="mov" data-tipo="gasto" data-fondo="${FOBRA}">${ic('arrowdn',14)}Gasto de obra</button><button class="btn sm" data-new="cambio" data-fondo="${FOBRA}">${ic('swap',14)}Cambiar dólares de obra</button></div>
   <div class="toolbar"><button class="btn sm" data-new="pase" data-fondo="${FMIO}" data-fdest="${FOBRA}">${ic('swap',14)}Separar plata para obra</button><button class="btn sm" data-new="pase" data-fondo="${FOBRA}" data-fdest="${FMIO}">${ic('swap',14)}Retirar ganancia</button></div>
   ${hayObra()?'':`<div class="empty"><p>Para empezar, tocá <b>Separar plata para obra</b> y poné cuánta de la plata que tenés hoy es de obra y en qué cuenta está. Desde ahí cada cobro y gasto de obra se lleva aparte.</p></div>`}
   <h4 class="sub">Obra en ${mesNombre(m)}</h4>
-  <div class="fk"><span>Cobrado <b class="pos">${money0(ci)}</b></span><span>Gastado <b>${money0(cg)}</b></span><span>Resultado <b class="${ci-cg<0?'neg':'pos'}">${ci-cg<0?'− ':''}${money0(Math.abs(ci-cg))}</b></span></div>
+  <div class="fk"><span>Cobrado <b class="pos">${money0(ci)}</b>${ciu?` y <b class="pos">${usd0(ciu)}</b>`:''}</span><span>Gastado <b>${money0(cg)}</b></span><span>Resultado <b class="${ci-cg<0?'neg':'pos'}">${ci-cg<0?'− ':''}${money0(Math.abs(ci-cg))}</b></span></div>
   ${ms.length?`<ul class="list">${ms.slice(0,8).map(movRow).join('')}</ul>${ms.length>8?`<button class="lnk" data-act="verfondo" data-id="${FOBRA}">Ver los ${ms.length} movimientos de obra${ic('right',14)}</button>`:''}`:`<p class="muted small">Sin movimientos de obra en ${mesNombre(m)}.</p>`}`;
 }
 function tabCuentas(m){
-  return`<p class="muted small">Lo que tenés hoy en cada cuenta, con pesos y dólares por separado. No se convierte nada solo: si pasás dólares a pesos, cargalo como <b>Transferencia</b> con la cotización que usaste. Con <b>Ajustar</b> ponés el saldo real de una cuenta.</p>
+  return`<p class="muted small">Lo que tenés hoy en cada cuenta, con pesos y dólares por separado. No se convierte nada solo: si pasás dólares a pesos, tocá <b>Cambiar dólares</b> y poné la cotización que usaste. Con <b>Ajustar</b> ponés el saldo real de una cuenta.</p>
+  <div class="toolbar"><button class="btn sm pri" data-new="cambio">${ic('swap',14)}Cambiar dólares</button></div>
   ${plataBlock(true)}
   <h4 class="sub">Dólar hoy (referencia)</h4>${ratesBlock()}<div><button class="btn sm" data-act="edcotiz">Editar cotización a mano</button></div>`;
 }
@@ -1574,7 +1626,7 @@ V.tareas=()=>{
   const hbs=habsDe(h),hbSi=hbs.filter(x=>habEst(x,h)==='si').length,tnH=S.turnos.filter(x=>x.fecha===h).sort(byEv);
   const tHechas=S.tareas.filter(x=>x.hecha&&x.hechaEl===h).length,tPend=S.tareas.filter(F.hoy).length;
   const hechasHoy=tHechas+hbSi+pgHechos.length,pendHoy=tPend+(hbs.length-hbSi)+pgPend.length,vencN=S.tareas.filter(x=>!x.hecha&&x.fecha&&x.fecha<h).length+pgPend.filter(x=>x.d<h).length;
-  const pagoRow=({f,e,d})=>`<li class="row mov pago"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="cico" style="--cc:var(--neg)">${ic('receipt',16)}</span><span class="txt"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span>${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${f.debito?'<span>débito</span>':''}</span></span></button>
+  const pagoRow=({f,e,d})=>`<li class="row mov pago"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="cico" style="--cc:var(--neg)">${ic('receipt',16)}</span><span class="txt"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${fijoTxt(f)}</span>${f.cuenta?`<span>${esc(f.cuenta)}</span>`:''}${f.debito?'<span>débito</span>':''}</span></span></button>
     <span class="acts"><span class="pill ${e.k}">${e.k==='pagado'?e.t:d<h?(f.debito?'Débito del ':'Venció el ')+parseD(d).getDate():d===h?(f.debito?'Se debita hoy':'Vence hoy'):e.t}</span>${e.k==='pagado'?`<button class="btn sm" data-act="despagar" data-id="${f.id}" data-m="${mm}">Deshacer</button>`:d<=h?`<button class="btn sm pri" data-act="pagar" data-id="${f.id}" data-m="${mm}">${f.debito?'Se debitó':'Pagado'}</button>`:''}</span></li>`;
   const extrasHoy=S.tf!=='hoy'?'':`${pgPend.length||pgHechos.length?`<h4 class="sub" style="--sc:var(--neg)">Pagos de hoy</h4><ul class="list">${[...pgPend,...pgHechos].map(pagoRow).join('')}</ul>`:''}
    ${hbs.length?`<h4 class="sub" style="--sc:var(--pos)">Hábitos de hoy <span class="muted small" style="font-weight:500">${hbSi} de ${hbs.length}</span></h4><ul class="list">${hbs.map(x=>habRow(x,h)).join('')}</ul>`:''}
@@ -1612,7 +1664,7 @@ V.agenda=()=>{
   return`${exBanner()}${head}<div class="toolbar">${monthbar('calMes')}<div class="lg" style="margin-left:auto"><span><i style="background:var(--c-agenda)"></i>Turnos</span><span><i style="background:var(--c-tareas)"></i>Tareas</span><span><i style="background:var(--neg)"></i>Vencimientos</span>${S.habitos.length?'<span><i style="background:var(--pos)"></i>Hábitos cumplidos</span>':''}</div></div>
   <div class="grid2"><article class="card"><div class="cal">${cells}</div></article>
   <article class="card"><header class="ch"><h3>${fechaLarga(sd)}</h3><button class="btn sm" data-new="turno" data-fecha="${sd}">${ic('plus',15)}Turno</button></header>
-   ${dEv.length||dTk.length||dFj.length||dPa.length?`<ul class="list">${dEv.map(evRow).join('')}${dTk.map(taskRow).join('')}${dFj.map(f=>{const e=fijoEstado(f,sm);return`<li class="row"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${money(f.monto,f.moneda)}</span><span class="pill ${e.k}">${e.t}</span></span></button></li>`}).join('')}${dPa.map(p=>`<li class="row"><button class="rb" data-edit="papel" data-id="${p.id}"><span class="rt">Vence: ${esc(p.nombre)}</span><span class="rm"><span>${esc(p.cat||'')}</span></span></button></li>`).join('')}</ul>`:'<p class="muted">Nada agendado este día.</p>'}
+   ${dEv.length||dTk.length||dFj.length||dPa.length?`<ul class="list">${dEv.map(evRow).join('')}${dTk.map(taskRow).join('')}${dFj.map(f=>{const e=fijoEstado(f,sm);return`<li class="row"><button class="rb" data-edit="fijo" data-id="${f.id}"><span class="rt">${esc(f.nombre)}</span><span class="rm"><span class="num">${fijoTxt(f)}</span><span class="pill ${e.k}">${e.t}</span></span></button></li>`}).join('')}${dPa.map(p=>`<li class="row"><button class="rb" data-edit="papel" data-id="${p.id}"><span class="rt">Vence: ${esc(p.nombre)}</span><span class="rm"><span>${esc(p.cat||'')}</span></span></button></li>`).join('')}</ul>`:'<p class="muted">Nada agendado este día.</p>'}
    <h4 class="sub">Próximos 30 días</h4>${prox.length?`<ul class="list">${prox.map(evRow).join('')}</ul>`:'<p class="muted small">Sin turnos en el próximo mes.</p>'}</article></div>
   <div class="grid2"><article class="card" style="--sc:var(--pos)"><header class="ch"><h3><span class="ico">${ic('rep',16)}</span>Hábitos · ${fechaRel(sd)}</h3><button class="btn sm" data-new="habito">${ic('plus',15)}Hábito</button></header>${habBlock(sd)}
    ${S.habitos.length?'<p class="hint">Tocá el círculo: una vez es hecho, dos es no lo hice, tres lo deja sin marcar. Elegí otro día en el calendario para marcar días anteriores.</p>':''}</article>
@@ -2031,7 +2083,7 @@ const accToSheet=a=>{switch(a.tipo){
 async function crearMov(o){
   const base={tipo:o.tipo,monto:+o.monto,moneda:o.moneda||'ARS',cuenta:o.cuenta,fecha:o.fecha||HOY(),desc:o.desc||'',creado:Date.now()};if(fk(o.fondo)===FOBRA)base.fondo=FOBRA;
   if(o.tipo==='ajuste'){base.desc=o.desc||'Ajuste de saldo';return put('movs',newId('movs'),base)}
-  if(o.tipo==='transf'){base.destino=o.destino;if(+o.montoDest)base.montoDest=+o.montoDest;base.monedaDest=o.monedaDest||base.moneda;if(+o.tc)base.tc=+o.tc;return put('movs',newId('movs'),base)}
+  if(o.tipo==='transf'){base.destino=o.destino;if(o.destino===o.cuenta&&(o.monedaDest||base.moneda)!==base.moneda)base.cambio=true;if(+o.montoDest)base.montoDest=+o.montoDest;base.monedaDest=o.monedaDest||base.moneda;if(+o.tc)base.tc=+o.tc;return put('movs',newId('movs'),base)}
   base.categoria=o.categoria;
   const n=o.tipo==='gasto'?Math.max(1,parseInt(o.cuotas)||1):1;
   if(n===1)return put('movs',newId('movs'),base);
@@ -2099,6 +2151,7 @@ const FORM={
   ${enCuota?`<p class="hint">Cuota ${x.cuota.n} de ${x.cuota.total}. Los cambios se aplican solo a esta cuota.</p>`:''}
   <div class="seg"><label><input type="radio" name="f-tipo" id="f-tipo-g" value="gasto" ${tipo==='gasto'?'checked':''}><span>Gasto</span></label><label><input type="radio" name="f-tipo" id="f-tipo-i" value="ingreso" ${tipo==='ingreso'?'checked':''}><span>Ingreso</span></label><label><input type="radio" name="f-tipo" id="f-tipo-t" value="transf" ${tipo==='transf'?'checked':''}><span>Transferencia</span></label></div>
   ${fondoSeg(x.fondo,'f-fondo')}
+  <p class="hint obrah" id="f-mp-h" hidden></p>
   <div class="two">${fld('<span id="f-monto-l">Monto</span>',`<input class="inp big" id="f-monto" inputmode="decimal" placeholder="0" value="${x.monto?nf.format(x.monto):''}" autofocus>`)}${fld('Moneda',`<select class="inp" id="f-mon">${opts(['ARS','USD'],x.moneda||'ARS')}</select>`)}</div>
   ${x.id?'':`${fld('Cuotas',`<select class="inp" id="f-cuotas">${[1,2,3,4,5,6,9,10,12,18,24].map(n=>`<option value="${n}" ${+(x.cuotas||1)===n?'selected':''}>${n===1?'En un pago':n+' cuotas'}</option>`).join('')}</select>`,'f-cuotas-w')}<p class="hint" id="f-cuotas-h"></p>`}
   ${fld('Descripción',`<input class="inp" id="f-desc" placeholder="Ej: Coto, nafta, cliente Pérez" value="${esc(x.desc)}">`)}
@@ -2108,6 +2161,25 @@ const FORM={
    ${S.cotiz?`<div class="chips">${DOLARES.filter(([k])=>S.cotiz[k]&&(+S.cotiz[k].venta||+S.cotiz[k].compra)).map(([k,l])=>`<button type="button" class="chip" data-act="settc" data-v="${+S.cotiz[k].venta||+S.cotiz[k].compra}">${l} $ ${nf0.format(+S.cotiz[k].venta||+S.cotiz[k].compra)}</button>`).join('')}</div>`:''}
    <p class="hint" id="f-conv-h">Elegí o escribí la cotización y se calcula lo que recibís. Podés corregirlo a mano.</p></div>
   ${fld('Fecha',`<input class="inp" type="date" id="f-fecha" value="${esc(x.fecha||HOY())}">`)}`},
+ cambio:x=>{const v2p=x.id?x.moneda==='USD':(x.moneda||'USD')==='USD',C=S.cfg.cuentas.filter(c=>!esTarjeta(c)),cta=x.cuenta||(fk(x.fondo)===FOBRA?cuentaObra():'')||C.find(esEfe)||C[0];
+  return`<h2>${x.id?'Editar cambio de moneda':'Cambiar dólares'}</h2>
+  <p class="hint">Pasás dólares a pesos (o al revés) sin que cuente como gasto ni ingreso. La plata sigue siendo de obra o tuya, según elijas.</p>
+  ${fondoSeg(x.fondo,'f-xfondo')}
+  <div class="seg"><label><input type="radio" name="f-xdir" value="v" ${v2p?'checked':''}><span>Dólares → pesos</span></label><label><input type="radio" name="f-xdir" value="c" ${v2p?'':'checked'}><span>Pesos → dólares</span></label></div>
+  <div class="two">${fld('<span id="f-xm-l">Dólares que cambiás</span>',`<input class="inp big" id="f-xm" inputmode="decimal" placeholder="0" value="${x.monto?nf.format(x.monto):''}" autofocus>`)}${fld('Cotización',`<input class="inp big" id="f-xtc" inputmode="decimal" placeholder="Ej: 1.450" value="${x.tc?nf.format(x.tc):''}">`)}</div>
+  <div class="chips" id="f-xchips"></div>
+  ${fld('<span id="f-xr-l">Pesos que recibís</span>',`<input class="inp big" id="f-xr" inputmode="decimal" placeholder="0" value="${x.montoDest?nf.format(x.montoDest):''}">`)}
+  <p class="hint" id="f-xh"></p>
+  <div class="two">${fld('Dónde están',`<select class="inp" id="f-xcta">${opts(C,cta)}</select>`)}${fld('Quedan en',`<select class="inp" id="f-xdest">${opts(C,x.destino||cta)}</select>`)}</div>
+  <div class="two">${fld('Descripción (opcional)',`<input class="inp" id="f-xdesc" value="${esc(x.desc||'')}" placeholder="Ej: Cobro obra Pérez en dólares">`)}${fld('Fecha',`<input class="inp" type="date" id="f-xfecha" value="${esc(x.fecha||HOY())}">`)}</div>`},
+ pagousd:p=>{const f=S.fijos.find(y=>y.id===p.fid)||{},tc=tcTarjeta();
+  return`<h2>Pagar ${esc(f.nombre||'')}</h2>
+  <p class="hint">Es una suscripción en dólares que se cobra en pesos. Poné lo que te cobraron de verdad, o dejá el cálculo al dólar tarjeta.</p>
+  <div class="two">${fld('Dólares',`<input class="inp big" id="f-ux" inputmode="decimal" value="${nf.format(+f.monto||0)}">`)}${fld('Dólar que te cobraron',`<input class="inp big" id="f-utc" inputmode="decimal" placeholder="Ej: 2.041" value="${tc?nf.format(tc):''}">`)}</div>
+  ${S.cotiz?`<div class="chips">${[['tarjeta','Tarjeta'],['oficial','Oficial'],['mep','MEP'],['blue','Blue']].filter(([k])=>tcDe(k,'venta')).map(([k,l])=>`<button type="button" class="chip" data-act="setutc" data-v="${tcDe(k,'venta')}">${l} ${money0(tcDe(k,'venta'))}</button>`).join('')}</div>`:''}
+  ${fld('Pesos que se pagaron',`<input class="inp big" id="f-ups" inputmode="decimal" placeholder="0" value="${tc?nf.format(Math.round((+f.monto||0)*tc)):''}">`)}
+  <p class="hint" id="f-uh"></p>
+  <div class="two">${fld('Se pagó con',`<select class="inp" id="f-ucta">${opts(S.cfg.cuentas,f.cuenta||S.cfg.cuentas[0])}</select>`)}${fld('Fecha',`<input class="inp" type="date" id="f-ufecha" value="${esc(p.m===HOY().slice(0,7)?HOY():fijoDue(f,p.m))}">`)}</div>`},
  pase:x=>{const desde=fk(x.fondo),hacia=x.fondoDest?fk(x.fondoDest):(desde===FMIO?FOBRA:FMIO),ret=desde===FOBRA&&hacia===FMIO;
   return`<h2>${x.id?'Editar pase de plata':ret?'Retirar ganancia de obra':'Separar plata para obra'}</h2>
   <p class="hint">Cambia de quién es la plata sin moverla de cuenta. ${ret?'Usalo cuando te quedás con plata de obra como ganancia.':'Usalo para marcar que una parte de lo que tenés en una cuenta es de obra.'}</p>
@@ -2152,6 +2224,8 @@ const FORM={
  fijo:x=>`<h2>${x.id?(esSusc(x)?'Editar suscripción':'Editar pago fijo'):(x.categoria==='Suscripciones'?'Nueva suscripción':'Nuevo pago fijo')}</h2>
   ${fld('Nombre',`<input class="inp" id="f-nombre" value="${esc(x.nombre)}" placeholder="${x.categoria==='Suscripciones'?'Ej: Netflix, Spotify, iCloud':'Ej: Alquiler, Edesur, Monotributo'}" autofocus>`)}
   <div class="two">${fld('Monto aproximado',`<input class="inp big" id="f-monto" inputmode="decimal" value="${x.monto?nf.format(x.monto):''}">`)}${fld('Moneda',`<select class="inp" id="f-mon">${opts(['ARS','USD'],x.moneda||'ARS')}</select>`)}</div>
+  <label class="ckl" id="f-pes-w"><input type="checkbox" id="f-pes" ${x.enPesos===false?'':'checked'}> Se cobra en pesos, al dólar tarjeta</label>
+  <p class="hint" id="f-pes-h"></p>
   <div class="two">${fld('Se repite',`<select class="inp" id="f-frec"><option value="mensual">Todos los meses</option><option value="anual" ${x.frecuencia==='anual'?'selected':''}>Una vez por año</option></select>`)}${fld('En el mes',`<select class="inp" id="f-mes">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${+(x.mes||(+HOY().slice(5,7)))===i+1?'selected':''}>${cap(mesNombre('2026-'+pad(i+1)))}</option>`).join('')}</select>`,'f-mes-w')}</div>
   <div class="two">${fld('Vence el día',`<input class="inp" type="number" min="1" max="31" id="f-dia" value="${esc(x.dia||10)}">`)}${fld('Categoría',`<select class="inp" id="f-cat">${opts(S.cfg.catGasto,x.categoria||'Servicios')}</select>`)}</div>
   <div class="two">${fld('Se paga con',`<select class="inp" id="f-cta">${opts(S.cfg.cuentas,x.cuenta||S.cfg.cuentas[0])}</select>`)}${fld('Avisarme',`<select class="inp" id="f-avisar">${[[0,'El mismo día'],[1,'1 día antes'],[2,'2 días antes'],[3,'3 días antes'],[5,'5 días antes'],[7,'1 semana antes']].map(([v,l])=>`<option value="${v}" ${(x.avisar==null?3:+x.avisar)===v?'selected':''}>${l}</option>`).join('')}</select>`)}</div>
@@ -2207,7 +2281,7 @@ const FORM={
 };
 const SIMPLE=['menu','mas','deshacer','catdet'];
 function openSheet(kind,id,preset){
-  let it=null;
+  let it=null;if(kind==='mov'&&id){const m0=S.movs.find(x=>x.id===id);if(m0&&m0.cambio)kind='cambio'}
   if(kind==='clave'){if(!VK){if(!$('#scrim').hidden)closeSheet();go('claves');toast('Desbloqueá la bóveda primero');return}it=id?(VI||[]).find(x=>x.id===id):null}
   else if(kind==='servicio'&&!S.vehiculos.length){kind='vehiculo';toast('Primero agregá tu auto')}
   else if(kind==='ai'){S.sheet={kind};S.ai=preset&&preset.texto?S.ai:{estado:'nuevo',texto:'',voz:!!(preset&&preset.voz)};$('#scrim').hidden=false;if(preset&&preset.texto)correrAI(preset.texto);else{renderAI();if(preset&&preset.voz)setTimeout(()=>dictar(true),80)}return}
@@ -2218,7 +2292,7 @@ function openSheet(kind,id,preset){
   $('#sheet').innerHTML=SIMPLE.includes(kind)?FORM[kind]():`<form data-form="sheet" novalidate>${FORM[kind](x)}<p class="ferr" id="ferr" hidden></p>
    <div class="sacts">${canDel&&kind!=='km'&&kind!=='cotiz'?`<button type="button" class="btn danger" data-act="sdel">${kind==='tarjeta'?'Quitar':'Borrar'}</button>`:''}${it&&it.grupo?`<button type="button" class="btn danger" data-act="sdelg">Borrar las cuotas que faltan</button>`:''}<span class="sp"></span><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></form>`;
   $('#scrim').hidden=false;
-  if(kind==='factura')calcIVA();if(kind==='mov')movSync();if(kind==='fijo')fijoSync();if(kind==='habito')habSync();if(kind==='pase')paseSync();hidratar($('#sheet'));
+  if(kind==='factura')calcIVA();if(kind==='mov')movSync();if(kind==='fijo')fijoSync();if(kind==='habito')habSync();if(kind==='pase')paseSync();if(kind==='cambio')cambioSync();if(kind==='pagousd')pagoUsdCalc();hidratar($('#sheet'));
   setTimeout(()=>{const f=$('#sheet [autofocus]');if(f&&matchMedia('(min-width:700px)').matches)f.focus()},40);
 }
 function closeSheet(){if(aiCtl){try{aiCtl.abort()}catch(e){}aiCtl=null}if(rec){try{rec.abort()}catch(e){}rec=null}$('#scrim').hidden=true;$('#sheet').innerHTML='';S.sheet=null}
@@ -2232,12 +2306,30 @@ function movSync(){const t=(document.querySelector('[name=f-tipo]:checked')||{})
   const cl=$('#f-cta-l');if(cl)cl.textContent=tr?'Desde':'Cuenta';
   const cs=$('#f-cuotas'),n=cs?+cs.value:1,ml=$('#f-monto-l'),hh=$('#f-cuotas-h');
   if(ml)ml.textContent=t==='gasto'&&n>1?'Monto de cada cuota':'Monto';
+  const mh=$('#f-mp-h');if(mh){const fz=segVal(document,'f-fondo'),c=($('#f-cta')||{}).value,dst=cuentaObra(),m=parseMonto(($('#f-monto')||{}).value)||0,mon=($('#f-mon')||{}).value||'ARS';
+    const on=fz===FOBRA&&!tr&&c&&ctasSoloPers().includes(c)&&dst;mh.hidden=!on;
+    if(on){const mm=m?money(m,mon):'esa plata';mh.innerHTML=t==='gasto'?`${ic('info',14)} ${esc(c)} es solo tuyo: obra usó plata tuya. Se descuenta de la plata de obra en ${esc(dst.toLowerCase())} y esos ${mm} del ${esc(dst.toLowerCase())} pasan a ser tuyos. <b>Si ya te los cobraste en mano, no hagas nada más.</b>`:`${ic('info',14)} ${esc(c)} es solo tuyo: el cobro queda como tuyo ahí y ${mm} del ${esc(dst.toLowerCase())} pasan a ser de obra. Así obra no pierde nada.`}}
   if(hh){const m=parseMonto(($('#f-monto')||{}).value);hh.hidden=!(t==='gasto'&&n>1);hh.textContent=n>1&&m>0?`Total ${money(m*n)} · se carga una cuota por mes desde la fecha elegida`:'Se carga una cuota por mes desde la fecha elegida'}}
 function convCalc(){const w=$('#f-conv-w');if(!w||w.hidden)return;const tc=parseMonto(($('#f-tc')||{}).value),m=parseMonto(($('#f-monto')||{}).value),mo=$('#f-mon').value,md=$('#f-mondest').value;
   if(!(tc>0&&m>0))return;const r=mo==='USD'&&md==='ARS'?m*tc:mo==='ARS'&&md==='USD'?m/tc:m;$('#f-mdest').value=nf.format(Math.round(r*100)/100)}
+function cambioSync(){const dirV=((document.querySelector('[name=f-xdir]:checked')||{}).value||'v')==='v';const l1=$('#f-xm-l'),l2=$('#f-xr-l'),ch=$('#f-xchips');if(!l1)return;
+  l1.textContent=dirV?'Dólares que cambiás':'Pesos que cambiás';l2.textContent=dirV?'Pesos que recibís':'Dólares que recibís';
+  const lado=dirV?'compra':'venta';
+  if(ch)ch.innerHTML=S.cotiz?[['blue','Blue'],['oficial','Oficial'],['mep','MEP']].filter(([k])=>tcDe(k,lado)).map(([k,l])=>`<button type="button" class="chip" data-act="setxtc" data-v="${tcDe(k,lado)}">${l} ${lado} ${money0(tcDe(k,lado))}</button>`).join(''):'';
+  cambioCalc()}
+function cambioCalc(desdeR){const dirV=((document.querySelector('[name=f-xdir]:checked')||{}).value||'v')==='v';const m=parseMonto(($('#f-xm')||{}).value)||0,ti=$('#f-xtc'),ri=$('#f-xr');if(!ti||!ri)return;
+  if(desdeR){const r=parseMonto(ri.value)||0;if(m>0&&r>0)ti.value=nf.format(Math.round((dirV?r/m:m/r)*100)/100)}
+  else{const tc=parseMonto(ti.value)||0;if(m>0&&tc>0)ri.value=nf.format(Math.round((dirV?m*tc:m/tc)*100)/100)}
+  const h=$('#f-xh');if(!h)return;const fz=segVal(document,'f-xfondo'),c=($('#f-xcta')||{}).value,F=fondoSaldos(),mon=dirV?'USD':'ARS';
+  const hay=(((F[fz]||{}).ctas||{})[c]||{})[mon]||0;const quien=fz===FOBRA?'Obra':'Vos';
+  h.innerHTML=c?`${quien} ${fz===FOBRA?'tiene':'tenés'} ${money(hay,mon)} en ${esc(c)}.${m>hay+0.5?' <b>Es más de lo que hay</b>: si cobraste esos dólares, cargá primero el cobro.':''}`:''}
+function pagoUsdCalc(desdeP){const x=parseMonto(($('#f-ux')||{}).value)||0,ti=$('#f-utc'),pi=$('#f-ups');if(!ti||!pi)return;
+  if(desdeP){const p=parseMonto(pi.value)||0;if(x>0&&p>0)ti.value=nf.format(Math.round(p/x*100)/100)}
+  else{const tc=parseMonto(ti.value)||0;if(x>0&&tc>0)pi.value=nf.format(Math.round(x*tc))}
+  const h=$('#f-uh');if(h){const p=parseMonto(pi.value)||0;h.textContent=p?`Se carga un gasto de ${money0(p)} (US$ ${nf.format(x)}).`:''}}
 function habSync(){const f=$('#f-hfrec');if(!f)return;const a=$('#f-hdias-w'),b=$('#f-hcada-w');if(a)a.hidden=f.value!=='dias';if(b)b.hidden=f.value!=='cada'}
 function paseSync(){const de=$('#f-pde'),pa=$('#f-pa');if(!de||!pa)return;const ok=pa.value===FMIO&&de.value!==FMIO;['f-pgan-w','f-pgan-h'].forEach(i=>{const e=$('#'+i);if(e)e.hidden=!ok})}
-function fijoSync(){const d=$('#f-deb');['f-auto-w','f-auto-h'].forEach(i=>{const e=$('#'+i);if(e&&d)e.hidden=!d.checked});const f=$('#f-frec'),w=$('#f-mes-w');if(f&&w)w.hidden=f.value!=='anual'}
+function fijoSync(){const mo=$('#f-mon'),pw=$('#f-pes-w'),ph=$('#f-pes-h'),usd=mo&&mo.value==='USD';if(pw)pw.hidden=!usd;if(ph){const on=usd&&$('#f-pes')&&$('#f-pes').checked,tc=tcTarjeta(),m=parseMonto(($('#f-monto')||{}).value)||0;ph.hidden=!usd;ph.innerHTML=!on?'Se carga en dólares y se descuenta de los dólares de la cuenta.':tc?`Cada vez que se paga se carga en pesos al dólar tarjeta del día${m?` (hoy US$ ${nf.format(m)} ≈ <b>${money0(m*tc)}</b>, a ${money0(tc)})`:` (hoy ${money0(tc)})`}. Al pagarlo podés poner el monto exacto que te cobraron.`:'Cada vez que se paga te pregunta cuántos pesos te cobraron.'}const d=$('#f-deb');['f-auto-w','f-auto-h'].forEach(i=>{const e=$('#'+i);if(e&&d)e.hidden=!d.checked});const f=$('#f-frec'),w=$('#f-mes-w');if(f&&w)w.hidden=f.value!=='anual'}
 async function submitSheet(form){
   const {kind,it}=S.sheet;
   const v=id=>{const e=form.querySelector('#'+id);return e?String(e.value).trim():''};
@@ -2270,6 +2362,15 @@ async function submitSheet(form){
     const o={monto,moneda:v('f-pmon'),cuenta:v('f-pcta'),desde:de,hacia:pa,ganancia:gan,fecha:v('f-pfecha')||HOY(),desc:v('f-pdesc')};closeSheet();
     if(it){const b=strip(it);Object.assign(b,{monto,moneda:o.moneda,montoDest:monto,monedaDest:o.moneda,cuenta:o.cuenta,destino:o.cuenta,fondo:de,fondoDest:pa,ganancia:gan,fecha:o.fecha,desc:o.desc});if(await put('movs',it.id,b))toast('Guardado');return}
     if(await crearPase(o))toast(gan?`Retiraste ${money(monto,o.moneda)} de ganancia`:`Pasaste ${money(monto,o.moneda)} de ${fondoN(de).toLowerCase()} a ${fondoN(pa).toLowerCase()}`);return}
+  if(kind==='cambio'){const dirV=((form.querySelector('[name=f-xdir]:checked')||{}).value||'v')==='v',m=num('f-xm'),r=num('f-xr');let tc=num('f-xtc');
+    if(!(m>0))return ferr(dirV?'Poné cuántos dólares cambiás.':'Poné cuántos pesos cambiás.');if(!(r>0))return ferr('Poné la cotización o cuánto recibís.');
+    if(!(tc>0))tc=dirV?r/m:m/r;
+    const d={tipo:'transf',cambio:true,monto:m,moneda:dirV?'USD':'ARS',cuenta:v('f-xcta'),destino:v('f-xdest')||v('f-xcta'),montoDest:r,monedaDest:dirV?'ARS':'USD',tc:Math.round(tc*100)/100,fecha:v('f-xfecha')||HOY(),desc:v('f-xdesc')};
+    const fz=segVal(form,'f-xfondo');closeSheet();
+    const b=it?strip(it):{creado:Date.now()};delete b.fondo;delete b.categoria;Object.assign(b,d);if(fz===FOBRA)b.fondo=FOBRA;
+    if(await put('movs',it?it.id:newId('movs'),b))toast(`${fz===FOBRA?'Obra: ':''}cambiaste ${money(m,d.moneda)} por ${money(r,d.monedaDest)}`);return}
+  if(kind==='pagousd'){const p=S.sheet.preset,f=S.fijos.find(y=>y.id===p.fid);if(!f){closeSheet();return}const ux=num('f-ux'),ps=num('f-ups');if(!(ps>0))return ferr('Poné cuántos pesos se pagaron.');
+    const tc=ux>0?Math.round(ps/ux*100)/100:num('f-utc');closeSheet();await pagar(f,p.m,{usd:ux>0?ux:+f.monto,pesos:ps,tc,cuenta:v('f-ucta'),fecha:v('f-ufecha')});return}
   if(kind==='ajuste'){const cta=v('f-acta'),mon=v('f-amon'),real=num('f-areal');if(isNaN(real))return ferr('Poné cuánto tenés hoy en '+(mon==='USD'?'dólares':'pesos')+'.');
     const cur=(saldos()[cta]||{})[mon]||0,diff=Math.round((real-cur)*100)/100;closeSheet();
     if(!diff){toast('Ya coincide, no hace falta ajustar');return}
@@ -2280,12 +2381,13 @@ async function submitSheet(form){
   let data;
   if(kind==='mov'){const monto=num('f-monto');if(!(monto>0))return ferr('Ingresá un monto mayor a cero.');
     const tipo=form.querySelector('[name=f-tipo]:checked').value;
-    if(tipo==='transf'&&v('f-cta')===v('f-dest'))return ferr('Elegí cuentas distintas para la transferencia.');
+    if(tipo==='transf'&&v('f-cta')===v('f-dest')&&v('f-mon')===v('f-mondest'))return ferr('Elegí cuentas distintas para la transferencia (o cambiá la moneda si es un cambio de dólares).');
     if(!it){closeSheet();const md=num('f-mdest');
       const tcv=num('f-tc');const ok=await crearMov({fondo:segVal(form,'f-fondo'),tipo,monto,moneda:v('f-mon'),categoria:v('f-cat'),cuenta:v('f-cta'),destino:v('f-dest'),montoDest:md>0?md:0,monedaDest:v('f-mondest'),tc:tipo==='transf'&&v('f-mon')!==v('f-mondest')&&tcv>0?tcv:0,fecha:v('f-fecha')||HOY(),desc:v('f-desc'),cuotas:+v('f-cuotas')||1});
       if(ok)toast(+v('f-cuotas')>1&&tipo==='gasto'?'Cuotas cargadas':'Guardado');return}
     data={...base,tipo,monto,moneda:v('f-mon'),cuenta:v('f-cta'),fecha:v('f-fecha')||HOY(),desc:v('f-desc')};
     {const fz=segVal(form,'f-fondo');if(fz===FOBRA)data.fondo=FOBRA;else delete data.fondo}
+    if(+data.usd&&data.moneda==='ARS'){data.tc=Math.round(monto/data.usd*100)/100;delete data.estimado}
     if(tipo==='transf'){data.destino=v('f-dest');const md=num('f-mdest');data.montoDest=md>0?md:null;data.monedaDest=v('f-mondest');const tcv=num('f-tc');if(data.moneda!==data.monedaDest&&tcv>0)data.tc=tcv;else delete data.tc;delete data.categoria}else{data.categoria=v('f-cat');delete data.destino;delete data.montoDest;delete data.monedaDest}}
   else if(kind==='habito'){if(!v('f-hnom'))return ferr('Escribí qué hábito querés llevar.');const fr=v('f-hfrec')||'diario';
     const dias=[...form.querySelectorAll('[name=f-hdia]:checked')].map(e=>+e.value);if(fr==='dias'&&!dias.length)return ferr('Elegí al menos un día.');
@@ -2298,7 +2400,8 @@ async function submitSheet(form){
   else if(kind==='turno'){if(!v('f-titulo'))return ferr('Poné qué es el turno.');if(!v('f-fecha'))return ferr('Elegí la fecha.');
     data={...base,titulo:v('f-titulo'),fecha:v('f-fecha'),hora:v('f-hora'),lugar:v('f-lugar'),tipo:v('f-tipo'),nota:v('f-nota')}}
   else if(kind==='fijo'){if(!v('f-nombre'))return ferr('Poné un nombre.');const monto=num('f-monto');const dia=Math.min(31,Math.max(1,parseInt(v('f-dia'))||1));
-    data={...base,nombre:v('f-nombre'),monto:monto>0?monto:0,moneda:v('f-mon'),dia,frecuencia:v('f-frec'),mes:+v('f-mes')||null,categoria:v('f-cat'),cuenta:v('f-cta'),debito:form.querySelector('#f-deb').checked,avisar:+v('f-avisar'),auto:!!form.querySelector('#f-auto')?.checked,pagados:base.pagados||{}}}
+    data={...base,nombre:v('f-nombre'),monto:monto>0?monto:0,moneda:v('f-mon'),dia,frecuencia:v('f-frec'),mes:+v('f-mes')||null,categoria:v('f-cat'),cuenta:v('f-cta'),debito:form.querySelector('#f-deb').checked,avisar:+v('f-avisar'),auto:!!form.querySelector('#f-auto')?.checked,pagados:base.pagados||{}};
+    if(data.moneda==='USD'&&!form.querySelector('#f-pes')?.checked)data.enPesos=false;else delete data.enPesos}
   else if(kind==='factura'){
     const ri=S.cfg.fiscal.regimen==='ri';const tipo=ri?((form.querySelector('[name=f-ftipo]:checked')||{}).value||'emitida'):(base.tipo||'emitida');
     let neto,iva,total,alic=0;
@@ -2330,13 +2433,18 @@ async function autoDebitos(){const h=HOY(),m=h.slice(0,7),hechos=[];
     for(const ym of [addM(m,-1),m]){const f=S.fijos.find(x=>x.id===f0.id)||f0;if(!fijoAplica(f,ym)||(f.pagados||{})[ym]||(f.omitidos||{})[ym])continue;
       const due=fijoDue(f,ym);if(due>h)continue;if(f.creado&&ymd(new Date(f.creado))>due)continue;
       const id='auto-'+f.id+'-'+ym;S.autoHechos=S.autoHechos||new Set();if(S.autoHechos.has(id))continue;S.autoHechos.add(id);
-      if(!S.movs.some(x=>x.id===id)){const ok=await put('movs',id,{tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha:due,desc:f.nombre,fijo:f.id,auto:true,creado:Date.now()});if(!ok)continue}
+      if(!S.movs.some(x=>x.id===id)){const mv={tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha:due,desc:f.nombre,fijo:f.id,auto:true,creado:Date.now()};
+        if(fijoARS(f))Object.assign(mv,{monto:fijoARS(f),moneda:'ARS',usd:+f.monto||0,tc:tcTarjeta(),estimado:true});
+        const ok=await put('movs',id,mv);if(!ok)continue}
       const b=strip(f);b.pagados={...(f.pagados||{}),[ym]:id};if(await put('fijos',f.id,b))hechos.push(f)}}
-  if(hechos.length)toast(hechos.length===1?`Se cargó el débito de ${hechos[0].nombre}: ${money(hechos[0].monto,hechos[0].moneda)}${hechos[0].cuenta?' de '+hechos[0].cuenta:''}`:`Se cargaron ${hechos.length} débitos automáticos`)}
-async function pagar(f,m){if((f.omitidos||{})[m]){f={...f,omitidos:{...f.omitidos}};delete f.omitidos[m]}
+  if(hechos.length)toast(hechos.length===1?`Se cargó el débito de ${hechos[0].nombre}: ${fijoTxt(hechos[0])}${hechos[0].cuenta?' de '+hechos[0].cuenta:''}`:`Se cargaron ${hechos.length} débitos automáticos`)}
+async function pagar(f,m,conv){if(fijoPes(f)&&!conv){openSheet('pagousd',null,{fid:f.id,m});return}
+  if((f.omitidos||{})[m]){f={...f,omitidos:{...f.omitidos}};delete f.omitidos[m]}
   const id=newId('movs');const due=fijoDue(f,m),h=HOY();
-  const fecha=m!==h.slice(0,7)?due:(f.debito&&due<=h?due:h);
-  const ok=await put('movs',id,{tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha,desc:f.nombre,fijo:f.id,creado:Date.now()});
+  const fecha=conv&&conv.fecha?conv.fecha:m!==h.slice(0,7)?due:(f.debito&&due<=h?due:h);
+  const mv={tipo:'gasto',monto:+f.monto||0,moneda:f.moneda||'ARS',categoria:f.categoria||'Servicios',cuenta:f.cuenta||S.cfg.cuentas[0]||'',fecha,desc:f.nombre,fijo:f.id,creado:Date.now()};
+  if(conv){Object.assign(mv,{monto:conv.pesos,moneda:'ARS',usd:+conv.usd||+f.monto||0,tc:conv.tc});if(conv.cuenta)mv.cuenta=conv.cuenta}
+  const ok=await put('movs',id,mv);
   if(!ok)return;
   const b=strip(f);b.pagados={...(f.pagados||{}),[m]:id};
   if(await put('fijos',f.id,b))toast(`${f.nombre}: ${f.debito?'débito confirmado':'pagado'} y cargado en gastos`);
@@ -2421,6 +2529,8 @@ function act(a,t){
   else if(a==='bajardoc'){const x=S.archivos.find(y=>y.id===id);if(x)(async()=>{try{const u=await fileUrl(x.key);const r=await fetch(u);if(!r.ok)throw 0;const b=await r.blob();
       const nom=(x.nombre||'documento').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'documento';
       await saveFile(nom+'.'+(x.tipo==='application/pdf'?'pdf':x.tipo==='image/png'?'png':'jpg'),b)}catch(e){toast('No se pudo bajar el archivo. Revisá la conexión.')}})()}
+  else if(a==='setxtc'){const i=$('#f-xtc');if(i){i.value=nf.format(+t.dataset.v);cambioCalc()}}
+  else if(a==='setutc'){const i=$('#f-utc');if(i){i.value=nf.format(+t.dataset.v);pagoUsdCalc()}}
   else if(a==='settc'){const i=$('#f-tc');if(i){i.value=nf.format(+t.dataset.v);convCalc()}}
   else if(a==='edcotiz')openSheet('cotiz',null,S.cotiz||{});
   else if(a==='km'){const v=S.vehiculos.find(y=>y.id===id);if(v)openSheet('km',null,v)}
@@ -2490,7 +2600,7 @@ function fmtMontoInput(el,e){let v=el.value;if(!v)return;let pos=el.selectionSta
 document.addEventListener('input',e=>{const id=e.target.id;
   if(e.target.matches&&e.target.matches('input[inputmode=decimal],input[inputmode=numeric]'))fmtMontoInput(e.target,e);
   if(id==='fq'){S.fq=e.target.value;S.flim=10;render()}else if(id==='nq'){S.nq=e.target.value;render()}else if(id==='vq'){S.vq=e.target.value;render()}
-  else if(id==='f-neto')calcIVA();else if(id==='f-monto'&&S.sheet&&S.sheet.kind==='mov'){movSync();convCalc()}else if(id==='f-tc')convCalc()});
+  else if(id==='f-neto')calcIVA();else if(id==='f-monto'&&S.sheet&&S.sheet.kind==='mov'){movSync();convCalc()}else if(id==='f-monto'&&S.sheet&&S.sheet.kind==='fijo')fijoSync();else if(id==='f-xm'||id==='f-xtc')cambioCalc();else if(id==='f-xr')cambioCalc(true);else if(id==='f-ux'||id==='f-utc')pagoUsdCalc();else if(id==='f-ups')pagoUsdCalc(true);else if(id==='f-tc')convCalc()});
 document.addEventListener('change',e=>{const t=e.target,id=t.id;
   if(id==='imp-file'){const f=t.files&&t.files[0];t.value='';if(f)importar(f);return}
   if(id==='ftipo'){S.ftipo=t.value;S.flim=10;render()}
@@ -2500,10 +2610,12 @@ document.addEventListener('change',e=>{const t=e.target,id=t.id;
   else if(id==='cf-dolar'){S.cfg.dolarRef=t.value;putCfg();render()}
   else if(id.startsWith('pp-')){const v=parseMonto(t.value);const P={...(S.cfg.presupuestos||{})};if(v>0)P[t.dataset.cat]=v;else delete P[t.dataset.cat];S.cfg.presupuestos=P;putCfg();render()}
   else if(t.name==='f-tipo'){const sel=$('#f-cat');if(sel&&t.value!=='transf')sel.innerHTML=opts(catsDe(t.value,segVal(document,'f-fondo')));movSync()}
-  else if(t.name==='f-fondo'){const sel=$('#f-cat'),tp=(document.querySelector('[name=f-tipo]:checked')||{}).value||'gasto';if(sel&&tp!=='transf')sel.innerHTML=opts(catsDe(tp,t.value))}
+  else if(t.name==='f-fondo'){const sel=$('#f-cat'),tp=(document.querySelector('[name=f-tipo]:checked')||{}).value||'gasto';if(sel&&tp!=='transf')sel.innerHTML=opts(catsDe(tp,t.value));movSync()}
+  else if(id==='f-cta'&&S.sheet&&S.sheet.kind==='mov')movSync();
+  else if(t.name==='f-xdir'||id==='f-xcta'||t.name==='f-xfondo')cambioSync();
   else if(id==='f-cuotas')movSync();
-  else if(id==='f-mon'||id==='f-mondest'){movSync();convCalc()}
-  else if(id==='f-frec'||id==='f-deb')fijoSync();
+  else if(id==='f-mon'||id==='f-mondest'){movSync();convCalc();fijoSync()}
+  else if(id==='f-frec'||id==='f-deb'||id==='f-pes')fijoSync();
   else if(id==='f-hfrec')habSync();
   else if(id==='f-pde'||id==='f-pa')paseSync();
   else if(t.dataset&&t.dataset.recat){const x=S.movs.find(y=>y.id===t.dataset.recat);if(x){const nueva=t.value,P={...S.sheet.preset};put('movs',x.id,{...strip(x),categoria:nueva}).then(ok=>{if(ok){toast(`Movido a ${nueva}`);if(S.sheet&&S.sheet.kind==='catdet')openSheet('catdet',null,P)}})}}
