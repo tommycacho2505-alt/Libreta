@@ -1,5 +1,5 @@
 // Libreta: guarda la app en el equipo para que abra sin internet.
-const VERSION='libreta-2026-11-12a';
+const VERSION='libreta-2026-11-16a';
 const BASE=['./','./index.html','./config.js','./manifest.webmanifest?v=2','./icon-v2-192.png','./icon-v2-512.png','./icon-v2-maskable.png','./apple-touch-icon-v2.png','./favicon-v2-32.png'];
 const EXTERNOS=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(VERSION);await c.addAll(BASE);
@@ -7,7 +7,7 @@ self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==VERSION)await caches.delete(k);await self.clients.claim()})())});
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);
-  if(/supabase\.co$/.test(u.hostname)||u.hostname==='dolarapi.com')return; // datos: siempre a la red
+  if(/supabase\.co$/.test(u.hostname)||u.hostname==='dolarapi.com'||u.hostname==='api.argentinadatos.com')return; // datos: siempre a la red
   if(u.origin===self.location.origin){ // la app: primero la red (para recibir cambios), si no hay, lo guardado
     e.respondWith(fetch(r).then(res=>{if(res.ok){const cp=res.clone();caches.open(VERSION).then(c=>c.put(r,cp))}return res})
       .catch(()=>caches.match(r,{ignoreSearch:true}).then(x=>x||caches.match('./index.html'))));return}
